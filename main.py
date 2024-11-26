@@ -12,7 +12,7 @@ from sia.sia import Sia
 from sia.character import Character
 from sia.memory.memory import SiaMemory
 # from sia.clients.telegram.telegram_client import SiaTelegram
-from sia.clients.twitter.twitter_api_client import SiaTwitter
+from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
 
 
 async def main():
@@ -25,7 +25,12 @@ async def main():
 
     sia = Sia(character=sia_character, memory=sia_memory, logging_enabled=False)
 
-    sia_twitter = SiaTwitter(login_cookies=json.loads(os.getenv("TW_COOKIES")))
+    sia_twitter = SiaTwitterOfficial(
+        api_key=os.getenv("TW_API_KEY"),
+        api_secret_key=os.getenv("TW_API_KEY_SECRET"),
+        access_token=os.getenv("TW_ACCESS_TOKEN"),
+        access_token_secret=os.getenv("TW_ACCESS_TOKEN_SECRET")
+    )
 
     # sia_client = SiaTelegram(bot_token=os.getenv("TG_BOT_TOKEN"), chat_id="@real_sia")
 
@@ -33,7 +38,7 @@ async def main():
     sia_previous_posts = sia_memory.get_posts()
 
     print("Posts from memory:\n")
-    for post in sia_previous_posts:
+    for post in sia_previous_posts[-20:]:
         print(post[4])
         print("\n\n")
     print(f"{'*'*100}\n\n")
