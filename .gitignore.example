@@ -1,0 +1,33 @@
+characters/*
+!characters/sia.json
+
+# Memory
+/memory/*
+!memory/.gitkeep
+
+# Python
+__pycache__/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Logs
+*.log
+logs/
+!logs/.gitkeep
+
+# Configurations
+*.env
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+.gitignore
