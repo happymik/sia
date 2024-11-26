@@ -8,7 +8,7 @@ import random
 from dotenv import load_dotenv
 load_dotenv()
 
-from sia.sia import Sia
+from sia import Sia
 from sia.character import Character
 from sia.memory.memory import SiaMemory
 # from sia.clients.telegram.telegram_client import SiaTelegram
@@ -59,8 +59,8 @@ async def main():
             print(post)
             print("\n\n")
 
-            # wait between 4 and 10 minutes before generating and publishing the next tweet
-            time.sleep(random.randint(240, 600))
+            # wait between 90 and 120 minutes before generating and publishing the next tweet
+            time.sleep(random.randint(5400, 7200))
 
 
 asyncio.run(main())
