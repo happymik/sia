@@ -8,7 +8,7 @@ import random
 from dotenv import load_dotenv
 load_dotenv()
 
-from sia import Sia
+from sia.sia import Sia
 from sia.character import Character
 from sia.memory.memory import SiaMemory
 # from sia.clients.telegram.telegram_client import SiaTelegram
