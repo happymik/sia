@@ -113,7 +113,7 @@ class Sia:
             image_filepath = f"media/{uuid4()}.png"
             save_image_from_url(image_url, image_filepath)
 
-        return post.content, image_filepath
+        return post.content, [image_filepath] if image_filepath else []
 
 
     def publish_post(self, client: SiaClient, post: str, media: dict = []):
