@@ -1,4 +1,3 @@
-
 import time
 import asyncio
 import os
@@ -15,8 +14,10 @@ from sia.memory.memory import SiaMemory
 from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
 
 
+# Main function
+#   that runs Sia
+
 async def main():
-    
     character_name = os.getenv("CHARACTER_NAME")
     sia_character = Character(json_file=f"characters/{character_name}.json")
 
@@ -43,9 +44,7 @@ async def main():
         print("\n\n")
     print(f"{'*'*100}\n\n")
 
-
     while True:
-        
         # for now, for testing purposes we publish a tweet for each time of day one by one, ignoring the actual time of the day
         for time_of_day in times_of_day:
             post = sia.generate_post(time_of_day=time_of_day)
@@ -63,5 +62,34 @@ async def main():
             time.sleep(random.randint(5400, 7200))
 
 
-asyncio.run(main())
+# Auxiliary functions to be able to run on Render.com
+#   (it requires a web-server running if deployed as a web-sevice)
 
+from aiohttp import web
+
+# New function to handle HTTP requests
+async def handle(request):
+    return web.Response(text="Service is running")
+
+# Function to start the web server
+async def start_server():
+    app = web.Application()
+    app.router.add_get('/', handle)
+    port = int(os.environ.get("PORT", 8080))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+
+
+# Run both the main function and the web server
+async def run():
+    await asyncio.gather(
+        main(),
+        start_server()
+    )
+
+
+# Start the asyncio event loop
+if __name__ == '__main__':
+    asyncio.run(run())
