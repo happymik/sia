@@ -14,9 +14,6 @@ from sia.memory.memory import SiaMemory
 from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
 
 
-# Main function
-#   that runs Sia
-
 async def main():
     character_name = os.getenv("CHARACTER_NAME")
     sia_character = Character(json_file=f"characters/{character_name}.json")
@@ -44,52 +41,33 @@ async def main():
         print("\n\n")
     print(f"{'*'*100}\n\n")
 
-    while True:
-        # for now, for testing purposes we publish a tweet for each time of day one by one, ignoring the actual time of the day
-        for time_of_day in times_of_day:
-            post = sia.generate_post(time_of_day=time_of_day)
 
-            sia_twitter.publish_post(post)
-            # await sia_client.publish_post(post)
-
-            sia.memory.add_post(platform="twitter", account=character_name, content=post)
-
-            print(f"New tweet generated, added to memory and published:\n")
-            print(post)
-            print("\n\n")
-
-            # wait between 90 and 120 minutes before generating and publishing the next tweet
-            time.sleep(random.randint(5400, 7200))
+    # wait between 30 and 60 minutes
+    #   before generating and publishing the next tweet
+    wait_time = random.randint(1800, 3600)
+    wait_hours = wait_time // 3600
+    wait_minutes = (wait_time % 3600) // 60
+    wait_seconds = wait_time % 60
+    print(f"\n\nWaiting for {wait_hours} hours, {wait_minutes} minutes, and {wait_seconds} seconds before generating and publishing next tweet.\n\n")
+    time.sleep(wait_time)
 
 
-# Auxiliary functions to be able to run on Render.com
-#   (it requires a web-server running if deployed as a web-sevice)
+    # for now, for testing purposes we publish a tweet using a random time of day as context for AI, ignoring the actual time of the day
+    time_of_day = random.choice(times_of_day)
 
-from aiohttp import web
+    post = sia.generate_post(time_of_day=time_of_day)
 
-# New function to handle HTTP requests
-async def handle(request):
-    return web.Response(text="Service is running")
+    sia_twitter.publish_post(post)
+    # await sia_client.publish_post(post)
 
-# Function to start the web server
-async def start_server():
-    app = web.Application()
-    app.router.add_get('/', handle)
-    port = int(os.environ.get("PORT", 8080))
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
+    sia.memory.add_post(platform="twitter", account=character_name, content=post)
 
+    print(f"New tweet generated, added to memory and published:\n")
+    print(post)
+    print("\n\n")
 
-# Run both the main function and the web server
-async def run():
-    await asyncio.gather(
-        main(),
-        start_server()
-    )
 
 
 # Start the asyncio event loop
 if __name__ == '__main__':
-    asyncio.run(run())
+    asyncio.run(main())
