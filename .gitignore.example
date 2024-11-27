@@ -5,6 +5,10 @@ characters/*
 /memory/*
 !memory/.gitkeep
 
+# Media
+/media/*
+!media/.gitkeep
+
 # Python
 __pycache__/
 
