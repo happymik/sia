@@ -23,8 +23,8 @@ class SiaTwitterOfficial(SiaClient):
 
     def publish_post(self, post, media:dict=[]):
         
+        media_ids = []
         if media:
-            media_ids = []
             for m in media:
                 media_ids.append(
                     self.upload_media(m)
