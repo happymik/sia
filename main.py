@@ -39,10 +39,10 @@ async def main():
     print(f"{'*'*100}\n\n")
 
 
-    # wait between 30 and 60 minutes
+    # wait between 30 seconds and 15 minutes
     #   before generating and publishing the next tweet
     times_of_day = sia.times_of_day()
-    wait_time = random.randint(1800, 3600)
+    wait_time = random.randint(30, 900)
     wait_hours = wait_time // 3600
     wait_minutes = (wait_time % 3600) // 60
     wait_seconds = wait_time % 60
@@ -55,7 +55,7 @@ async def main():
     #   ignoring the actual time of the day
     time_of_day = random.choice(times_of_day)
     post, media = sia.generate_post(time_of_day=time_of_day)
-    sia_twitter.publish_post(post, [media])
+    sia_twitter.publish_post(post, media)
     sia.memory.add_post(platform="twitter", account=character_name, content=post)
 
 
