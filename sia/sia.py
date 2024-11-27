@@ -1,7 +1,8 @@
 import datetime
 import time
 import random
-import json
+import os
+from uuid import uuid4
 
 from sia.character import Character
 from sia.clients.client import SiaClient
@@ -11,6 +12,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 
+from utils.etc_utils import generate_image_dalle, save_image_from_url
 from utils.logging_utils import setup_logging, log_message, enable_logging
 
 
@@ -24,6 +26,7 @@ class Sia:
         self.logger = setup_logging()
         enable_logging(logging_enabled)
         self.character.logging_enabled = logging_enabled
+
 
     def times_of_day(self):
         return ["morning", "afternoon", "evening", "night"]
@@ -40,6 +43,7 @@ class Sia:
             time_of_day = "night"
         
         return time_of_day
+
 
     def generate_post(self, time_of_day=None, platform="twitter"):
 
@@ -97,24 +101,35 @@ class Sia:
             "length_range": random.choice(self.character.post_parameters.get("length_ranges")),
             # "formatting": self.character.post_parameters.get("formatting")
         }
-        # print(f"\n\nAI input: {json.dumps(ai_input, indent=4)}\n\n")
 
         post = ai_chain.invoke(ai_input)
-
-        return post.content
-
-    def publish_post(self, client: SiaClient, post):
-        client.publish_post(post)
-
-    def generate_response(self, message):
-        pass
-
-    def create_queue(self):
         
-        queue = []
+        # Generate an image for the post
+        #   with 30% probability before we have a way for Sia
+        #   to decide herself when to generate
+        image_filepath = None
+        if random.random() < 0.3:
+            image_url = generate_image_dalle(post.content[0:900])
+            image_filepath = f"media/{uuid4()}.png"
+            save_image_from_url(image_url, image_filepath)
+
+        return post.content, image_filepath
+
+
+    def publish_post(self, client: SiaClient, post: str, media: dict = []):
+        client.publish_post(post, media)
+
+
+    # def generate_response(self, message):
+    #     pass
+
+
+    # def create_queue(self):
         
-        # check if it is time to post
+    #     queue = []
         
-        # check if there are conversations to respond to
+    #     # check if it is time to post
         
-        pass
+    #     # check if there are conversations to respond to
+        
+    #     pass
