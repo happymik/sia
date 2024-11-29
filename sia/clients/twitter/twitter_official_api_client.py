@@ -127,15 +127,19 @@ class SiaTwitterOfficial(SiaClient):
                 if author == self.character.twitter_username:
                     continue
                 
-                from openai import OpenAI
-                client = OpenAI()
-                moderation_response = client.moderations.create(
-                    model="omni-moderation-latest",
-                    input=reply.text,
-                )
-                flagged = moderation_response.results[0].flagged
-                if flagged:
-                    log_message(self.logger, "info", self, f"flagged reply: {reply.text}")
+                try:
+                    from openai import OpenAI
+                    client = OpenAI()
+                    moderation_response = client.moderations.create(
+                        model="omni-moderation-latest",
+                        input=reply.text,
+                    )
+                    flagged = moderation_response.results[0].flagged
+                    if flagged:
+                        log_message(self.logger, "info", self, f"flagged reply: {reply.text}")
+                except Exception as e:
+                    log_message(self.logger, "error", self, f"Error moderating reply: {e}")
+                    flagged = False
                 
                 try:
                     message = self.memory.add_message(
