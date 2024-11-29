@@ -60,8 +60,8 @@ async def main():
 
     start_time = time.time()
     
-    # run for 17 minutes (default render setup - run every 20 minutes)
-    while time.time() - start_time < 1020:
+    # run for 45 minutes
+    while time.time() - start_time < 2700:
 
         character_settings = sia.memory.get_character_settings()
         
