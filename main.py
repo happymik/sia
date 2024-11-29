@@ -60,12 +60,14 @@ async def main():
 
     start_time = time.time()
     
-    # run for 15 minutes
-    while time.time() - start_time < 900:
+    # run for 17 minutes (default render setup - run every 20 minutes)
+    while time.time() - start_time < 1020:
+
+        character_settings = sia.memory.get_character_settings()
         
         # posting
         #   new tweet
-        if not tweeted:
+        if time.time() > character_settings.character_settings.get("twitter", {}).get("next_post_time", 0):
             # for now, for testing purposes we generate a tweet
             #   using a random time of day as context for AI,
             #   ignoring the actual time of the day
@@ -81,6 +83,14 @@ async def main():
             if tweet_id is not Forbidden:
                 sia.memory.add_message(post, tweet_id)
                 tweeted = True
+
+                character_settings.character_settings = {
+                    "twitter": {
+                        "next_post_time": time.time() + sia.character.platform_settings.get("twitter", {}).get("post_frequency", 2) * 3600
+                    }
+                }
+                sia.memory.update_character_settings(character_settings)
+
             # next_tweet_time = time.time() + random.randint(300, 600)
             time.sleep(30)
 
