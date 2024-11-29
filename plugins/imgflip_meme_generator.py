@@ -31,6 +31,7 @@ class ImgflipMemeGenerator():
             'username': self.imgflip_username,
             'password': self.imgflip_password,
             'model': model,
+            'prefix_text': prefix_text,
             'no_watermark': no_watermark
         }
         if template_id:
