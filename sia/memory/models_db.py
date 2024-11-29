@@ -8,7 +8,7 @@ Base = declarative_base()
 class SiaMessageModel(Base):
     __tablename__ = 'message'
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    id = Column(String, primary_key=True)
     conversation_id = Column(String)
     character = Column(String)
     platform = Column(String, nullable=False)
