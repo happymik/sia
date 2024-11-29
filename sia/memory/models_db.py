@@ -17,5 +17,5 @@ class SiaMessageModel(Base):
     response_to = Column(String)
     wen_posted = Column(DateTime, default=lambda: datetime.now())
     original_data = Column(JSON)
-    flagged = Column(Boolean, nullable=True, default=False)  # Changed to Boolean
+    flagged = Column(Boolean, nullable=True, default=False)
     message_metadata = Column(JSON)
