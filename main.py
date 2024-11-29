@@ -16,10 +16,10 @@ from tweepy import Forbidden
 
 
 async def main():
-    character_name = os.getenv("CHARACTER_NAME")
+    character_name_id = os.getenv("CHARACTER_NAME_ID")
 
     sia = Sia(
-        character=SiaCharacter(json_file=f"characters/{character_name}.json"),
+        character=SiaCharacter(json_file=f"characters/{character_name_id}.json"),
         twitter=SiaTwitterOfficial(
             api_key=os.getenv("TW_API_KEY"),
             api_secret_key=os.getenv("TW_API_KEY_SECRET"),
@@ -30,7 +30,7 @@ async def main():
         logging_enabled=True
     )
     
-    character_name = character_name.capitalize()
+    character_name = sia.character.name
     
     my_tweet_ids = sia.twitter.get_my_tweet_ids()
     print(f"My tweet ids: {my_tweet_ids}")
