@@ -158,5 +158,10 @@
         "bioinformatics",
         "digital transformation",
         "smart cities"
-    ]
+    ],
+    "plugins": {
+        "imgflip": {
+            "probability_of_posting": 1
+        }
+    }
 }

@@ -9,6 +9,8 @@ from sia.clients.client import SiaClient
 from sia.memory.memory import SiaMemory
 from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
 
+from plugins.imgflip_meme_generator import ImgflipMemeGenerator
+
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
@@ -84,15 +86,30 @@ class Sia:
 
         generated_post = ai_chain.invoke(ai_input)
         
+        
+        image_filepaths = []
+        
         # Generate an image for the post
         #   with 30% probability before we have a way for Sia
         #   to decide herself when to generate
-        image_filepath = None
         if random.random() < 0.3:
             image_url = generate_image_dalle(generated_post.content[0:900])
             image_filepath = f"media/{uuid4()}.png"
             save_image_from_url(image_url, image_filepath)
-        
+            image_filepaths.append(image_filepath)
+
+
+        # Generate a meme for the post
+        imgflip_meme_generator = ImgflipMemeGenerator(os.getenv("IMGFLIP_USERNAME"), os.getenv("IMGFLIP_PASSWORD"))
+        if random.random() < self.character.plugins_settings.get("imgflip", {}).get("probability_of_posting", 0):
+            print("Generating a meme")
+            image_url = imgflip_meme_generator.generate_ai_meme(generated_post.content)
+            os.makedirs("media/imgflip_memes", exist_ok=True)
+            image_filepath = f"media/imgflip_memes/{uuid4()}.png"
+            save_image_from_url(image_url, image_filepath)
+            image_filepaths.append(image_filepath)
+
+
         generated_post_schema = SiaMessageGeneratedSchema(
             content=generated_post.content,
             platform=platform,
@@ -100,7 +117,7 @@ class Sia:
             character=character
         )
 
-        return generated_post_schema, [image_filepath] if image_filepath else []
+        return generated_post_schema, image_filepaths
 
 
     def generate_response(self, message: SiaMessageSchema, platform="twitter", time_of_day=None) -> SiaMessageGeneratedSchema:
