@@ -18,14 +18,19 @@ from tweepy import Forbidden
 async def main():
     character_name_id = os.getenv("CHARACTER_NAME_ID")
 
+    character = SiaCharacter(json_file=f"characters/{character_name_id}.json")
     sia = Sia(
-        character=SiaCharacter(json_file=f"characters/{character_name_id}.json"),
+        character=character,
         twitter=SiaTwitterOfficial(
             api_key=os.getenv("TW_API_KEY"),
             api_secret_key=os.getenv("TW_API_KEY_SECRET"),
             access_token=os.getenv("TW_ACCESS_TOKEN"),
             access_token_secret=os.getenv("TW_ACCESS_TOKEN_SECRET"),
             bearer_token=os.getenv("TW_BEARER_TOKEN")
+        ),
+        memory=SiaMemory(
+            db_path=os.getenv("DB_PATH"),
+            character=character
         ),
         logging_enabled=True
     )
@@ -80,7 +85,7 @@ async def main():
             )
             print(f"Generated post: {len(post.content)} characters")
             tweet_id = sia.twitter.publish_post(post, media)
-            if tweet_id is not Forbidden:
+            if tweet_id and tweet_id is not Forbidden:
                 sia.memory.add_message(post, tweet_id)
                 tweeted = True
 

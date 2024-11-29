@@ -9,8 +9,8 @@ from utils.logging_utils import setup_logging, log_message, enable_logging
 
 class SiaMemory:
 
-    def __init__(self, character: SiaCharacter):
-        self.db_path = "sqlite:///memory/siamemory.sqlite"
+    def __init__(self, db_path: str, character: SiaCharacter):
+        self.db_path = db_path
         self.character = character
         self.engine = create_engine(self.db_path)
         Base.metadata.create_all(self.engine)
