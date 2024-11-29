@@ -103,7 +103,7 @@ class Sia:
         imgflip_meme_generator = ImgflipMemeGenerator(os.getenv("IMGFLIP_USERNAME"), os.getenv("IMGFLIP_PASSWORD"))
         if random.random() < self.character.plugins_settings.get("imgflip", {}).get("probability_of_posting", 0):
             print("Generating a meme")
-            image_url = imgflip_meme_generator.generate_ai_meme(generated_post.content)
+            image_url = imgflip_meme_generator.generate_ai_meme(prefix_text=generated_post.content)
             os.makedirs("media/imgflip_memes", exist_ok=True)
             image_filepath = f"media/imgflip_memes/{uuid4()}.png"
             save_image_from_url(image_url, image_filepath)
