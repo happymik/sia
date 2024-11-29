@@ -4,9 +4,10 @@ import random
 import os
 from uuid import uuid4
 
-from sia.character import Character
+from sia.character import SiaCharacter
 from sia.clients.client import SiaClient
 from sia.memory.memory import SiaMemory
+from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
 
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
@@ -18,45 +19,28 @@ from utils.logging_utils import setup_logging, log_message, enable_logging
 
 class Sia:
     
-    def __init__(self, character: Character, memory: SiaMemory = None, clients = None, logging_enabled=True):
+    def __init__(self, character: SiaCharacter, memory: SiaMemory = None, clients = None, twitter = None, logging_enabled=True):
         self.character = character
-        self.memory = memory
+        if not self.character.sia:
+            self.character.sia = self
+        self.memory = memory if memory else SiaMemory(character=character)
         self.clients = clients
+        self.twitter = twitter
+        self.twitter.character = self.character
+        self.twitter.memory = self.memory
+        print(f"twitter memory: {self.twitter.memory}")
+        print(f"twitter character: {self.twitter.character}")
 
         self.logger = setup_logging()
         enable_logging(logging_enabled)
         self.character.logging_enabled = logging_enabled
 
 
-    def times_of_day(self):
-        return ["morning", "afternoon", "evening", "night"]
-
-    def current_time_of_day(self):
-        current_hour = time.localtime().tm_hour
-        if 5 <= current_hour < 12:
-            time_of_day = "morning"
-        elif 12 <= current_hour < 17:
-            time_of_day = "afternoon"
-        elif 17 <= current_hour < 21:
-            time_of_day = "evening"
-        else:
-            time_of_day = "night"
-        
-        return time_of_day
-
-
-    def generate_post(self, time_of_day=None, platform="twitter"):
+    def generate_post(self, platform="twitter", author=None, character=None, time_of_day=None):
 
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", """
-                You are {character_name}: {character_intro}.
-                
-                Here's more about you:
-                {character_lore}.
-                
-                Current date and time: {current_date_time}.
-                
-                Your current mood is {mood}.
+                {you_are}
                 
                 Your post examples are:
                 {post_examples}
@@ -90,34 +74,98 @@ class Sia:
         ai_chain = prompt_template | llm
 
         ai_input = {
-            "character_name": self.character.name, 
-            "character_intro": self.character.intro,
-            "character_lore": self.character.lore,
-            "current_date_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "mood": self.character.get_mood("general", time_of_day=time_of_day),
+            "you_are": self.character.prompts.get("you_are"),
             "post_examples": self.character.get_post_examples("general", time_of_day=time_of_day, random_pick=7),
-            "previous_posts": [f"[{post[5]}] {post[4]}" for i, post in enumerate(self.memory.get_posts()[-10:])],
+            "previous_posts": [f"[{post.wen_posted}] {post.content}" for post in self.memory.get_messages()[-10:]],
             "platform": platform,
             "length_range": random.choice(self.character.post_parameters.get("length_ranges")),
             # "formatting": self.character.post_parameters.get("formatting")
         }
 
-        post = ai_chain.invoke(ai_input)
+        generated_post = ai_chain.invoke(ai_input)
         
         # Generate an image for the post
         #   with 30% probability before we have a way for Sia
         #   to decide herself when to generate
         image_filepath = None
         if random.random() < 0.3:
-            image_url = generate_image_dalle(post.content[0:900])
+            image_url = generate_image_dalle(generated_post.content[0:900])
             image_filepath = f"media/{uuid4()}.png"
             save_image_from_url(image_url, image_filepath)
+        
+        generated_post_schema = SiaMessageGeneratedSchema(
+            content=generated_post.content,
+            platform=platform,
+            author=author,
+            character=character
+        )
 
-        return post.content, [image_filepath] if image_filepath else []
+        return generated_post_schema, [image_filepath] if image_filepath else []
 
 
-    def publish_post(self, client: SiaClient, post: str, media: dict = []):
-        client.publish_post(post, media)
+    def generate_response(self, message: SiaMessageSchema, platform="twitter", time_of_day=None) -> SiaMessageGeneratedSchema:
+        
+        time_of_day = time_of_day if time_of_day else self.character.current_time_of_day()
+        
+        conversation = self.twitter.get_conversation(conversation_id=message.conversation_id)
+        conversation_first_message = self.memory.get_messages(id=message.conversation_id, platform=platform, sort_by=True)
+        conversation = conversation_first_message + conversation
+        
+        message_to_respond_str = f"[{message.wen_posted}] {message.author}: {message.content}"
+        log_message(self.logger, "info", self, f"Message to respond: {message_to_respond_str}")
+        conversation_str = "\n".join([f"[{msg.wen_posted}] {msg.author}: {msg.content}" for msg in conversation])
+        log_message(self.logger, "info", self, f"Conversation: {conversation_str}")
+        
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", """
+                {you_are}
+                
+                {communication_requirements}
+                
+                Your goal is to respond to the message on {platform} provided below in the conversation provided below.
+                
+                Message to response:
+                {message}
+
+                Conversation:
+                {conversation}
+            """),
+            ("user", """
+                Generate your response to the message. Your response length must be fewer than 30 words.
+            """)
+        ])
+        
+        # llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
+        llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0.3)
+        
+        ai_chain = prompt_template | llm
+
+        ai_input = {
+            "you_are": self.character.prompts.get("you_are"),
+            "communication_requirements": self.character.prompts.get("communication_requirements"),
+            "platform": platform,
+            "message": message_to_respond_str,
+            "conversation": conversation_str
+        }
+        log_message(self.logger, "info", self, f"AI input: {ai_input}")
+        generated_response = ai_chain.invoke(ai_input)
+        
+                
+        generated_response_schema = SiaMessageGeneratedSchema(
+            content=generated_response.content,
+            platform=platform,
+            author=self.character.name,
+            character=self.character.name,
+            response_to=message.id
+        )
+        log_message(self.logger, "info", self, f"Generated response: {generated_response_schema}")
+
+        return generated_response_schema
+
+
+    def publish_post(self, client: SiaClient, post: SiaMessageGeneratedSchema, media: dict = []) -> str:
+        tweet_id = client.publish_post(post, media)
+        return tweet_id
 
 
     # def generate_response(self, message):
