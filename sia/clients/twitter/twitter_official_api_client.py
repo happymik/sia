@@ -105,12 +105,16 @@ class SiaTwitterOfficial(SiaClient):
             query = " OR ".join([f"conversation_id:{id}" for id in batch])
             log_message(self.logger, "info", self, f"query: {query}")
 
-            new_replies_to_my_tweets = self.client.search_recent_tweets(
-                query=query,
-                since_id=since_id,
-                tweet_fields=["conversation_id","created_at","in_reply_to_user_id"],
-                expansions=["author_id","referenced_tweets.id"]
-            )
+            try:
+                new_replies_to_my_tweets = self.client.search_recent_tweets(
+                    query=query,
+                    since_id=since_id,
+                    tweet_fields=["conversation_id","created_at","in_reply_to_user_id"],
+                    expansions=["author_id","referenced_tweets.id"]
+                )
+            except Exception as e:
+                log_message(self.logger, "error", self, f"Error getting replies: {e}")
+                continue
             
             if not new_replies_to_my_tweets.data:
                 continue
