@@ -16,7 +16,7 @@ from tweepy import Forbidden
 
 
 async def main():
-    character_name = os.getenv("CHARACTER_NAME").capitalize()
+    character_name = os.getenv("CHARACTER_NAME")
 
     sia = Sia(
         character=SiaCharacter(json_file=f"characters/{character_name}.json"),
@@ -29,6 +29,8 @@ async def main():
         ),
         logging_enabled=True
     )
+    
+    character_name = character_name.capitalize()
     
     my_tweet_ids = sia.twitter.get_my_tweet_ids()
     print(f"My tweet ids: {my_tweet_ids}")
@@ -58,8 +60,8 @@ async def main():
 
     start_time = time.time()
     
-    # run for 18 minutes
-    while time.time() - start_time < 1080:
+    # run for 15 minutes
+    while time.time() - start_time < 900:
         
         # posting
         #   new tweet
