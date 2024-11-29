@@ -1,58 +1,70 @@
 import json
 import time
 import random
+import datetime
 
 from utils.logging_utils import setup_logging, log_message, enable_logging
 
-class Character:
-    def __init__(self, name=None, intro=None, lore=None, bio=None, traits=None, mood=None, post_examples={}, post_parameters={}, message_examples={}, topics=None, json_file=None, logging_enabled=True):
+class SiaCharacter:
+    
+    def __init__(self, name=None, twitter_username=None, intro=None, lore=None, bio=None, traits=None, moods=None, post_examples={}, post_parameters={}, message_examples={}, topics=None, json_file=None, sia=None, logging_enabled=True):
         if json_file:
             self.load_from_json(json_file)
         else:
             self.name = name
+            self.twitter_username = twitter_username
             self.intro = intro
             self.lore = lore
             self.bio = bio
             self.traits = traits
-            self.mood = mood
+            self.moods = moods
             self.post_examples = post_examples
             self.post_parameters = post_parameters
             self.message_examples = message_examples
             self.topics = topics
+        
+        self.sia = sia
 
         self.logger = setup_logging()
         self.logging_enabled = logging_enabled
         enable_logging(self.logging_enabled)
+        
+        self.prompts = {
+            "you_are": f"""
+                You are {self.name}: {self.intro}.
+                
+                Here's more about you:
+                {self.lore}.
+                
+                Current date and time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}.
+                
+                Your current mood is {self.get_mood()}.
+            """.replace("                ", ""),
+            "communication_requirements": f"""
+                At all times you must remember:
+                1. You are an individual with independent personality, thoughts, feelings, values, and vision. Avoid acting as an assistant or a robot. Avoid trying to be helpful, to be your own personality.
+                2. When asked a question, avoid elaborating. Guess what the persona meant and respond based on that guess.
+            """.replace("                ", "")
+        }
 
 
     def load_from_json(self, json_file):
         with open(json_file, 'r') as file:
             data = json.load(file)
         self.name = data['name'] # required
+        self.twitter_username = data['twitter_username'] # required
         self.intro = data['intro'] # required
         self.lore = data['lore'] # required
         self.bio = data.get('bio') # optional
         self.traits = data.get('traits') # optional
-        self.mood = data.get('mood') # optional
+        self.moods = data.get('moods') # optional
         self.post_examples = data.get('post_examples') # optional
         self.post_parameters = data.get('post_parameters', {"length_ranges": ["1-5", "20-30", "50-100"]}) # optional
         self.message_examples = data.get('message_examples') # optional
         self.topics = data.get('topics') # optional
 
-    def current_time_of_day(self):
-        current_hour = time.localtime().tm_hour
-        if 5 <= current_hour < 12:
-            time_of_day = "morning"
-        elif 12 <= current_hour < 17:
-            time_of_day = "afternoon"
-        elif 17 <= current_hour < 21:
-            time_of_day = "evening"
-        else:
-            time_of_day = "night"
-        
-        return time_of_day
 
-    def get_mood(self, platform, time_of_day=None):
+    def get_mood(self, time_of_day=None):
         """
         Get the character's mood based on the platform and time of day.
 
@@ -62,7 +74,8 @@ class Character:
         """
         if time_of_day is None:
             time_of_day = self.current_time_of_day()
-        return self.mood.get(platform, {}).get(time_of_day, "morning")
+        return self.moods.get(time_of_day, "morning")
+
 
     def get_post_examples(self, platform, time_of_day=None, random_pick=0):
         """
@@ -85,4 +98,23 @@ class Character:
         log_message(self.logger, "info", self, f"Post examples: {examples_to_return}")
         
         return examples_to_return
+
+
+    def times_of_day(self):
+        return ["morning", "afternoon", "evening", "night"]
+
+
+    def current_time_of_day(self):
+        current_hour = time.localtime().tm_hour
+        if 5 <= current_hour < 12:
+            time_of_day = "morning"
+        elif 12 <= current_hour < 17:
+            time_of_day = "afternoon"
+        elif 17 <= current_hour < 21:
+            time_of_day = "evening"
+        else:
+            time_of_day = "night"
+        
+        return time_of_day
+
 
