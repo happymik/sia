@@ -90,9 +90,7 @@ class Sia:
         image_filepaths = []
         
         # Generate an image for the post
-        #   with 30% probability before we have a way for Sia
-        #   to decide herself when to generate
-        if random.random() < 0.3:
+        if random.random() < self.character.plugins_settings.get("dalle", {}).get("probability_of_posting", 0):
             image_url = generate_image_dalle(generated_post.content[0:900])
             image_filepath = f"media/{uuid4()}.png"
             save_image_from_url(image_url, image_filepath)

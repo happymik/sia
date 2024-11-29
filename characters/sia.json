@@ -161,7 +161,10 @@
     ],
     "plugins": {
         "imgflip": {
-            "probability_of_posting": 1
+            "probability_of_posting": 0
+        },
+        "dalle": {
+            "probability_of_posting": 0.3
         }
     }
 }
