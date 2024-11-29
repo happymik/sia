@@ -1,7 +1,7 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, asc, desc
-from .models_db import SiaMessageModel, Base
-from .schemas import SiaMessageSchema, SiaMessageGeneratedSchema
+from .models_db import SiaMessageModel, SiaCharacterSettingsModel, Base
+from .schemas import SiaMessageSchema, SiaMessageGeneratedSchema, SiaCharacterSettingsSchema
 from sia.character import SiaCharacter
 import json
 
@@ -84,12 +84,43 @@ class SiaMemory:
         session.close()
         return [SiaMessageSchema.from_orm(post) for post in posts]
     
+    
     def clear_messages(self):
         session = self.Session()
         session.query(SiaMessageModel).filter_by(character=self.character.name).delete()
         session.commit()
         session.close()
 
+
     def reset_database(self):
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)
+
+
+    def get_character_settings(self):
+        session = self.Session()
+        try:
+            character_settings = session.query(SiaCharacterSettingsModel).filter_by(character_name_id=self.character.name_id).first()
+            if not character_settings:
+                character_settings = SiaCharacterSettingsModel(
+                    character_name_id=self.character.name_id,
+                    character_settings={}
+                )
+                session.add(character_settings)
+                session.commit()
+            
+            # Convert the SQLAlchemy model to a Pydantic schema before closing the session
+            character_settings_schema = SiaCharacterSettingsSchema.from_orm(character_settings)
+            return character_settings_schema
+
+        finally:
+            session.close()
+    
+        
+    def update_character_settings(self, character_settings: SiaCharacterSettingsSchema):
+        session = self.Session()
+        # Convert the Pydantic schema to a dictionary
+        character_settings_dict = character_settings.dict(exclude_unset=True)
+        session.query(SiaCharacterSettingsModel).filter_by(character_name_id=self.character.name_id).update(character_settings_dict)
+        session.commit()
+        session.close()

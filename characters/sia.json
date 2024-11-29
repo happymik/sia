@@ -166,5 +166,10 @@
         "dalle": {
             "probability_of_posting": 0.3
         }
+    },
+    "platform_settings": {
+        "twitter": {
+            "post_frequency": 0.5
+        }
     }
 }

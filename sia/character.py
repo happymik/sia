@@ -7,11 +7,17 @@ from utils.logging_utils import setup_logging, log_message, enable_logging
 
 class SiaCharacter:
     
-    def __init__(self, name=None, twitter_username=None, intro=None, lore=None, bio=None, traits=None, moods=None, post_examples={}, post_parameters={}, message_examples={}, topics=None, plugins_settings={}, json_file=None, sia=None, logging_enabled=True):
+    def __init__(self, name=None, name_id=None, twitter_username=None, intro=None, lore=None, bio=None, traits=None, moods=None, post_examples={}, post_parameters={}, message_examples={}, topics=None, plugins_settings={}, platform_settings={}, json_file=None, sia=None, logging_enabled=True):
         if json_file:
-            self.load_from_json(json_file)
+            if not name_id:
+                name_id = json_file.split('/')[-1].split('.')[0]
+            self.load_from_json(json_file, name_id)
         else:
             self.name = name
+            if not name_id:
+                self.name_id = self.name.lower()
+            else:
+                self.name_id = name_id
             self.twitter_username = twitter_username
             self.intro = intro
             self.lore = lore
@@ -23,6 +29,7 @@ class SiaCharacter:
             self.message_examples = message_examples
             self.topics = topics
             self.plugins_settings = plugins_settings
+            self.platform_settings = platform_settings
         
         self.sia = sia
 
@@ -49,10 +56,14 @@ class SiaCharacter:
         }
 
 
-    def load_from_json(self, json_file):
+    def load_from_json(self, json_file, name_id=None):
         with open(json_file, 'r') as file:
             data = json.load(file)
         self.name = data['name'] # required
+        if not name_id:
+            self.name_id = self.name.lower()
+        else:
+            self.name_id = name_id
         self.twitter_username = data['twitter_username'] # required
         self.intro = data['intro'] # required
         self.lore = data['lore'] # required
@@ -64,7 +75,7 @@ class SiaCharacter:
         self.message_examples = data.get('message_examples') # optional
         self.topics = data.get('topics') # optional
         self.plugins_settings = data.get('plugins', {}) # optional
-        
+        self.platform_settings = data.get('platform_settings', {}) # optional
 
     def get_mood(self, time_of_day=None):
         """

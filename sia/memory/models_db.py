@@ -19,3 +19,11 @@ class SiaMessageModel(Base):
     original_data = Column(JSON)
     flagged = Column(Boolean, nullable=True, default=False)
     message_metadata = Column(JSON)
+
+
+class SiaCharacterSettingsModel(Base):
+    __tablename__ = 'character_settings'
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    character_name_id = Column(String)
+    character_settings = Column(JSON)
