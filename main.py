@@ -54,13 +54,16 @@ async def main():
     # print(f"\n\nWaiting for {wait_hours} hours, {wait_minutes} minutes, and {wait_seconds} seconds before generating and publishing next tweet.\n\n")
     # time.sleep(wait_time)
     
-    next_tweet_time = time.time()
+    tweeted = False
+
+    start_time = time.time()
     
-    while True:
+    # run for 18 minutes
+    while time.time() - start_time < 1080:
         
         # posting
         #   new tweet
-        if time.time() >= next_tweet_time:
+        if not tweeted:
             # for now, for testing purposes we generate a tweet
             #   using a random time of day as context for AI,
             #   ignoring the actual time of the day
@@ -74,8 +77,9 @@ async def main():
             print(f"Generated post: {len(post.content)} characters")
             tweet_id = sia.twitter.publish_post(post, media)
             if tweet_id is not Forbidden:
-                sia.memory.add_message(post, tweet_id)        
-            next_tweet_time = time.time() + random.randint(300, 600)
+                sia.memory.add_message(post, tweet_id)
+                tweeted = True
+            # next_tweet_time = time.time() + random.randint(300, 600)
             time.sleep(30)
 
 
