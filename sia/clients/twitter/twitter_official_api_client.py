@@ -57,11 +57,9 @@ class SiaTwitterOfficial(SiaClient):
             )
             print(f"Tweet sent successfully!: {response}")
             return response.data['id']
-        except Forbidden as e:
-            print(f"Failed to send tweet: {e}")
-            return Forbidden
         except Exception as e:
             print(f"Failed to send tweet: {e}")
+            print(f"Response headers: {e.response.headers}")
 
 
     def upload_media(self, media_filepath):
@@ -78,7 +76,8 @@ class SiaTwitterOfficial(SiaClient):
 
 
     def get_my_tweet_ids(self):
-        my_tweets = self.memory.get_messages(platform="twitter", author=self.character.name)
+        log_message(self.logger, "info", self, f"Getting my tweet ids for {self.character.twitter_username}")
+        my_tweets = self.memory.get_messages(platform="twitter", author=self.character.twitter_username)
         return [tweet.id for tweet in my_tweets]
     
     
@@ -140,7 +139,7 @@ class SiaTwitterOfficial(SiaClient):
                 except Exception as e:
                     log_message(self.logger, "error", self, f"Error moderating reply: {e}")
                     flagged = False
-                
+
                 try:
                     message = self.memory.add_message(
                         SiaMessageGeneratedSchema(
