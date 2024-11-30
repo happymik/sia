@@ -42,28 +42,16 @@ async def main():
     print(f"My tweet ids: {my_tweet_ids}")
         
     
-    # sia_client = SiaTelegram(bot_token=os.getenv("TG_BOT_TOKEN"), chat_id="@real_sia")
-
-    sia_previous_posts = sia.memory.get_messages()
-    print("Posts from memory:\n")
-    for post in sia_previous_posts[-20:]:
-        print(post)
-        print("\n\n")
-    print(f"{'*'*100}\n\n")
+    # sia_previous_posts = sia.memory.get_messages()
+    # print("Posts from memory:\n")
+    # for post in sia_previous_posts[-10:]:
+    #     print(post)
+    #     print("\n")
+    # print(f"{'*'*100}\n\n")
 
 
-    # wait between 30 seconds and 15 minutes
-    #   before generating and publishing the next tweet
     times_of_day = sia.character.times_of_day()
-    # wait_time = random.randint(30, 900)
-    # wait_hours = wait_time // 3600
-    # wait_minutes = (wait_time % 3600) // 60
-    # wait_seconds = wait_time % 60
-    # print(f"\n\nWaiting for {wait_hours} hours, {wait_minutes} minutes, and {wait_seconds} seconds before generating and publishing next tweet.\n\n")
-    # time.sleep(wait_time)
     
-    tweeted = False
-
     start_time = time.time()
     
     # run for 45 minutes
