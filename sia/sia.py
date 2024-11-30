@@ -86,6 +86,8 @@ class Sia:
 
             generated_post = ai_chain.invoke(ai_input)
             
+            log_message(self.logger, "info", self, f"Generated post with Anthropic: {generated_post}")
+            
         except Exception as e:
             
             try:
@@ -94,11 +96,14 @@ class Sia:
                 ai_chain = prompt_template | llm
 
                 generated_post = ai_chain.invoke(ai_input)
+
+                log_message(self.logger, "info", self, f"Generated post with OpenAI: {generated_post}")
             
             except Exception as e:
+                
                 generated_post = None
+                
                 log_message(self.logger, "error", self, f"Error generating post: {e}")
-                return None
         
         
         image_filepaths = []
