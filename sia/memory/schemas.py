@@ -13,7 +13,7 @@ class SiaMessageGeneratedSchema(BaseModel):
     message_metadata: Optional[dict] = None
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 class SiaMessageSchema(SiaMessageGeneratedSchema):
@@ -22,7 +22,7 @@ class SiaMessageSchema(SiaMessageGeneratedSchema):
     original_data: Optional[dict] = None
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 class SiaCharacterSettingsSchema(BaseModel):
@@ -31,5 +31,5 @@ class SiaCharacterSettingsSchema(BaseModel):
     character_settings: dict
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
