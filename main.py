@@ -2,6 +2,7 @@ import time
 import asyncio
 import os
 import random
+from datetime import datetime
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -70,9 +71,18 @@ async def main():
 
         character_settings = sia.memory.get_character_settings()
         
+        next_post_time = character_settings.character_settings.get('twitter', {}).get('next_post_time', 0)
+        next_post_datetime = datetime.fromtimestamp(next_post_time).strftime('%Y-%m-%d %H:%M:%S') if next_post_time else "N/A"
+        now_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(f"Current time: {now_time}")
+        next_post_time_seconds = next_post_time - time.time()
+        next_post_hours = next_post_time_seconds // 3600
+        next_post_minutes = (next_post_time_seconds % 3600) // 60
+        print(f"Next post time: {next_post_datetime} (posting in {next_post_hours}h {next_post_minutes}m)")
+        
         # posting
         #   new tweet
-        if time.time() > character_settings.character_settings.get("twitter", {}).get("next_post_time", 0):
+        if time.time() > next_post_time:
             # for now, for testing purposes we generate a tweet
             #   using a random time of day as context for AI,
             #   ignoring the actual time of the day
