@@ -123,7 +123,7 @@ class Sia:
         time_of_day = time_of_day if time_of_day else self.character.current_time_of_day()
         
         conversation = self.twitter.get_conversation(conversation_id=message.conversation_id)
-        conversation_first_message = self.memory.get_messages(id=message.conversation_id, platform=platform, sort_by=True)
+        conversation_first_message = self.memory.get_messages(id=message.conversation_id, platform=platform)
         conversation = conversation_first_message + conversation
         
         message_to_respond_str = f"[{message.wen_posted}] {message.author}: {message.content}"
