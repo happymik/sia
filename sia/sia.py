@@ -111,9 +111,10 @@ class Sia:
         # Generate an image for the post
         if random.random() < self.character.plugins_settings.get("dalle", {}).get("probability_of_posting", 0):
             image_url = generate_image_dalle(generated_post.content[0:900])
-            image_filepath = f"media/{uuid4()}.png"
-            save_image_from_url(image_url, image_filepath)
-            image_filepaths.append(image_filepath)
+            if image_url:
+                image_filepath = f"media/{uuid4()}.png"
+                save_image_from_url(image_url, image_filepath)
+                image_filepaths.append(image_filepath)
 
 
         # Generate a meme for the post
@@ -121,18 +122,19 @@ class Sia:
         if random.random() < self.character.plugins_settings.get("imgflip", {}).get("probability_of_posting", 0):
             print("Generating a meme")
             image_url = imgflip_meme_generator.generate_ai_meme(prefix_text=generated_post.content)
-            os.makedirs("media/imgflip_memes", exist_ok=True)
-            image_filepath = f"media/imgflip_memes/{uuid4()}.png"
-            save_image_from_url(image_url, image_filepath)
-            image_filepaths.append(image_filepath)
+            if image_url:
+                os.makedirs("media/imgflip_memes", exist_ok=True)
+                image_filepath = f"media/imgflip_memes/{uuid4()}.png"
+                save_image_from_url(image_url, image_filepath)
+                image_filepaths.append(image_filepath)
 
 
         post_content = generated_post.content if generated_post else None
         generated_post_schema = SiaMessageGeneratedSchema(
             content=post_content,
             platform=platform,
-            author=author,
-            character=character
+            author=self.character.twitter_username,
+            character=self.character.name
         )
 
         return generated_post_schema, image_filepaths
