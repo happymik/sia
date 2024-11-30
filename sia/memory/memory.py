@@ -59,7 +59,7 @@ class SiaMemory:
             session.close()
         
 
-    def get_messages(self, id=None, platform: str = None, author: str = None, not_author: str = None, character: str = None, conversation_id: str = None, flagged: bool = False, sort_by: bool = False, sort_order: str = "asc"):
+    def get_messages(self, id=None, platform: str = None, author: str = None, not_author: str = None, character: str = None, conversation_id: str = None, flagged: bool = False, sort_by: str = None, sort_order: str = "asc"):
         session = self.Session()
         query = session.query(SiaMessageModel)
         if id:
