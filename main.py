@@ -54,6 +54,8 @@ async def main():
     
     start_time = time.time()
     
+    replies_sent = 0
+    
     # run for 45 minutes
     while time.time() - start_time < 2700:
 
@@ -103,8 +105,12 @@ async def main():
         print("Checking for new replies...")
         replies = sia.twitter.get_new_replies_to_my_tweets()
         if replies:
-            # for now, for testing purposes we process only 3 replies
-            for r in replies[0:3]:
+            for r in replies:
+                
+                # for now, for testing purposes we process only 3 replies
+                if replies_sent > 2:
+                    break
+
                 print(f"Reply: {r}")
                 if r.flagged:
                     print(f"Skipping flagged reply: {r}")
@@ -115,6 +121,7 @@ async def main():
                     continue
                 print(f"Generated response: {len(generated_response.content)} characters")
                 tweet_id = sia.twitter.publish_post(post=generated_response, in_reply_to_tweet_id=r.id)
+                replies_sent += 1
                 if isinstance(tweet_id, Forbidden):
                     print(f"\n\nFailed to send reply: {tweet_id}. Sleeping for 10 minutes.\n\n")
                     time.sleep(600)
