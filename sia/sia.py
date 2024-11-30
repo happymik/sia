@@ -70,11 +70,6 @@ class Sia:
             """)
         ])
         
-        # llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
-        llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0.3)
-        
-        ai_chain = prompt_template | llm
-
         ai_input = {
             "you_are": self.character.prompts.get("you_are"),
             "post_examples": self.character.get_post_examples("general", time_of_day=time_of_day, random_pick=7),
@@ -83,8 +78,27 @@ class Sia:
             "length_range": random.choice(self.character.post_parameters.get("length_ranges")),
             # "formatting": self.character.post_parameters.get("formatting")
         }
+        
+        try: 
+            llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0.3)
+            
+            ai_chain = prompt_template | llm
 
-        generated_post = ai_chain.invoke(ai_input)
+            generated_post = ai_chain.invoke(ai_input)
+            
+        except Exception as e:
+            
+            try:
+                llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
+                
+                ai_chain = prompt_template | llm
+
+                generated_post = ai_chain.invoke(ai_input)
+            
+            except Exception as e:
+                generated_post = None
+                log_message(self.logger, "error", self, f"Error generating post: {e}")
+                return None
         
         
         image_filepaths = []
@@ -108,8 +122,9 @@ class Sia:
             image_filepaths.append(image_filepath)
 
 
+        post_content = generated_post.content if generated_post else None
         generated_post_schema = SiaMessageGeneratedSchema(
-            content=generated_post.content,
+            content=post_content,
             platform=platform,
             author=author,
             character=character
@@ -149,11 +164,6 @@ class Sia:
                 Generate your response to the message. Your response length must be fewer than 30 words.
             """)
         ])
-        
-        # llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
-        llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0.3)
-        
-        ai_chain = prompt_template | llm
 
         ai_input = {
             "you_are": self.character.prompts.get("you_are"),
@@ -162,10 +172,33 @@ class Sia:
             "message": message_to_respond_str,
             "conversation": conversation_str
         }
-        log_message(self.logger, "info", self, f"AI input: {ai_input}")
-        generated_response = ai_chain.invoke(ai_input)
         
+        try: 
+            llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0.3)
+            
+            ai_chain = prompt_template | llm
+
+            generated_response = ai_chain.invoke(ai_input)
+            
+        except Exception as e:
+            
+            try:
+                llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
                 
+                ai_chain = prompt_template | llm
+
+                generated_response = ai_chain.invoke(ai_input)
+            
+            except Exception as e:
+                generated_response = None
+                log_message(self.logger, "error", self, f"Error generating response: {e}")
+                return None
+        
+        
+        if not generated_response:
+            return None
+        
+
         generated_response_schema = SiaMessageGeneratedSchema(
             content=generated_response.content,
             platform=platform,

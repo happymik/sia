@@ -122,6 +122,9 @@ async def main():
                     print(f"Skipping flagged reply: {r}")
                     continue
                 generated_response = sia.generate_response(r)
+                if not generated_response:
+                    print(f"No response generated for reply: {r}")
+                    continue
                 print(f"Generated response: {len(generated_response.content)} characters")
                 tweet_id = sia.twitter.publish_post(post=generated_response, in_reply_to_tweet_id=r.id)
                 if isinstance(tweet_id, Forbidden):
