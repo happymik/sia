@@ -85,7 +85,6 @@ async def main():
             tweet_id = sia.twitter.publish_post(post, media)
             if tweet_id and tweet_id is not Forbidden:
                 sia.memory.add_message(post, tweet_id)
-                tweeted = True
 
                 character_settings.character_settings = {
                     "twitter": {
@@ -104,7 +103,8 @@ async def main():
         print("Checking for new replies...")
         replies = sia.twitter.get_new_replies_to_my_tweets()
         if replies:
-            for r in replies:
+            # for now, for testing purposes we process only 3 replies
+            for r in replies[0:3]:
                 print(f"Reply: {r}")
                 if r.flagged:
                     print(f"Skipping flagged reply: {r}")
