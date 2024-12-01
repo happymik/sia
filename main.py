@@ -15,6 +15,13 @@ from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
 
 from tweepy import Forbidden
 
+from utils.logging_utils import setup_logging, log_message, enable_logging
+
+logger = setup_logging()
+logging_enabled = True
+enable_logging(logging_enabled)
+
+
 
 async def main():
     character_name_id = os.getenv("CHARACTER_NAME_ID")
@@ -33,7 +40,7 @@ async def main():
             db_path=os.getenv("DB_PATH"),
             character=character
         ),
-        logging_enabled=True
+        logging_enabled=logging_enabled
     )
     
     character_name = sia.character.name
@@ -112,8 +119,9 @@ async def main():
                 
                 for r in replies:
                     
-                    # for now, for testing purposes we process only 3 replies
-                    if replies_sent > 2:
+                    max_responses_an_hour = character_settings.character_settings.get("responding", {}).get("responses_an_hour", 3)
+                    log_message(logger, "info", sia, f"Replies sent during this hour: {replies_sent}, max allowed: {max_responses_an_hour}")
+                    if replies_sent >= max_responses_an_hour:
                         break
 
                     print(f"Reply: {r}")
