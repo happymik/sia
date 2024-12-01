@@ -9,6 +9,7 @@ from sia.character import SiaCharacter
 from sia.clients.client import SiaClient
 from sia.memory.memory import SiaMemory
 from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
+from sia.schemas.schemas import ResponseFilteringResultLLMSchema
 
 from plugins.imgflip_meme_generator import ImgflipMemeGenerator
 
@@ -121,7 +122,6 @@ class Sia:
         # Generate a meme for the post
         imgflip_meme_generator = ImgflipMemeGenerator(os.getenv("IMGFLIP_USERNAME"), os.getenv("IMGFLIP_PASSWORD"))
         if random.random() < self.character.plugins_settings.get("imgflip", {}).get("probability_of_posting", 0):
-            print("Generating a meme")
             image_url = imgflip_meme_generator.generate_ai_meme(prefix_text=generated_post.content)
             if image_url:
                 os.makedirs("media/imgflip_memes", exist_ok=True)
@@ -166,10 +166,6 @@ class Sia:
         log_message(self.logger, "info", self, f"Conversation: {conversation_str}")
         
         
-        class ResponseFilteringResult(BaseModel):
-            should_respond: bool
-            reason: str
-        
         # do not answer if the message does not pass the filtering rules
         if self.character.responding.get("filtering_rules"):
             log_message(self.logger, "info", self, f"Checking the response against filtering rules: {self.character.responding.get('filtering_rules')}")
@@ -189,14 +185,21 @@ class Sia:
                     {filtering_rules}
                 """)
             ])
-            llm_filtering_structured = llm_filtering.with_structured_output(ResponseFilteringResult)
+            llm_filtering_structured = llm_filtering.with_structured_output(ResponseFilteringResultLLMSchema)
             
             filtering_chain = llm_filtering_prompt_template | llm_filtering_structured
-            filtering_result = filtering_chain.invoke({"conversation": conversation_str, "message": message_to_respond_str, "filtering_rules": self.character.responding.get("filtering_rules")})
-            log_message(self.logger, "info", self, f"Response filtering result: {filtering_result}")
+            
+            try:
+                filtering_result = filtering_chain.invoke({"conversation": conversation_str, "message": message_to_respond_str, "filtering_rules": self.character.responding.get("filtering_rules")})
+                log_message(self.logger, "info", self, f"Response filtering result: {filtering_result}")
+
+            except Exception as e:
+                log_message(self.logger, "error", self, f"Error getting filtering result: {e}")
+                return None
 
             if not filtering_result.should_respond:
                 return None
+            
         else:
             log_message(self.logger, "info", self, f"No filtering rules found.")
 
@@ -247,15 +250,10 @@ class Sia:
                 generated_response = ai_chain.invoke(ai_input)
             
             except Exception as e:
-                generated_response = None
                 log_message(self.logger, "error", self, f"Error generating response: {e}")
                 return None
         
-        
-        if not generated_response:
-            return None
-        
-
+    
         generated_response_schema = SiaMessageGeneratedSchema(
             content=generated_response.content,
             platform=platform,
@@ -273,16 +271,3 @@ class Sia:
         return tweet_id
 
 
-    # def generate_response(self, message):
-    #     pass
-
-
-    # def create_queue(self):
-        
-    #     queue = []
-        
-    #     # check if it is time to post
-        
-    #     # check if there are conversations to respond to
-        
-    #     pass

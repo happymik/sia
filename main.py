@@ -90,19 +90,22 @@ async def main():
                 character=character_name,
                 time_of_day=time_of_day
             )
-            print(f"Generated post: {len(post.content)} characters")
-            tweet_id = sia.twitter.publish_post(post, media)
-            if tweet_id and tweet_id is not Forbidden:
-                sia.memory.add_message(post, tweet_id)
+            
+            if post or media:
+                print(f"Generated post: {len(post.content)} characters")
+                tweet_id = sia.twitter.publish_post(post, media)
+                if tweet_id and tweet_id is not Forbidden:
+                    sia.memory.add_message(post, tweet_id)
 
-                character_settings.character_settings = {
-                    "twitter": {
-                        "next_post_time": time.time() + sia.character.platform_settings.get("twitter", {}).get("post_frequency", 2) * 3600
+                    character_settings.character_settings = {
+                        "twitter": {
+                            "next_post_time": time.time() + sia.character.platform_settings.get("twitter", {}).get("post_frequency", 2) * 3600
+                        }
                     }
-                }
-                sia.memory.update_character_settings(character_settings)
+                    sia.memory.update_character_settings(character_settings)
+            else:
+                log_message(logger, "info", sia, "No post or media generated.")
 
-            # next_tweet_time = time.time() + random.randint(300, 600)
             time.sleep(30)
 
 

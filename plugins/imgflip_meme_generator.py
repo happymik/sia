@@ -1,5 +1,13 @@
 import requests
 
+from utils.logging_utils import log_message, setup_logging, enable_logging
+
+logger = setup_logging()
+logging_enabled = True
+enable_logging(logging_enabled)
+
+
+
 class ImgflipMemeGenerator():
     def __init__(self, imgflip_username, imgflip_password):
         self.imgflip_username = imgflip_username
@@ -7,21 +15,28 @@ class ImgflipMemeGenerator():
 
     def generate_automeme(self, text, no_watermark=False):
         url = "https://api.imgflip.com/automeme"
+
         payload = {
             'username': self.imgflip_username,
             'password': self.imgflip_password,
             'text': text,
             'no_watermark': no_watermark
         }
-        response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            result = response.json()
-            if result['success']:
-                return result['data']['url']
+        
+        try:
+            response = requests.post(url, data=payload)
+            if response.status_code == 200:
+                result = response.json()
+                if result['success']:
+                    return result['data']['url']
+                else:
+                    raise Exception(f"Error: {result['error_message']}")
             else:
-                raise Exception(f"Error: {result['error_message']}")
-        else:
-            raise Exception(f"HTTP Error: {response.status_code}")
+                raise Exception(f"HTTP Error: {response.status_code}")
+
+        except Exception as e:
+            log_message(logger, "error", self, f"Error generating a meme: {e}")
+            return None
 
 
 
@@ -39,12 +54,16 @@ class ImgflipMemeGenerator():
         if prefix_text:
             payload['prefix_text'] = prefix_text
 
-        response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            result = response.json()
-            if result['success']:
-                return result['data']['url']
+        try:
+            response = requests.post(url, data=payload)
+            if response.status_code == 200:
+                result = response.json()
+                if result['success']:
+                    return result['data']['url']
+                else:
+                    raise Exception(f"Error: {result['error_message']}")
             else:
-                raise Exception(f"Error: {result['error_message']}")
-        else:
-            raise Exception(f"HTTP Error: {response.status_code}")
+                raise Exception(f"HTTP Error: {response.status_code}")
+        except Exception as e:
+            log_message(logger, "error", self, f"Error generating an AI meme: {e}")
+            return None
