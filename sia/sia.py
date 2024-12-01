@@ -157,6 +157,7 @@ class Sia:
         
         # do not answer if the message does not pass the filtering rules
         if self.character.responding.get("filtering_rules"):
+            log_message(self.logger, "info", self, f"Checking the response against filtering rules: {self.character.responding.get('filtering_rules')}")
             llm_filtering = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
             prompt_template = ChatPromptTemplate.from_messages([
                 ("system", """
@@ -173,6 +174,8 @@ class Sia:
 
             if filtering_result.content.lower() == "false":
                 return None
+        else:
+            log_message(self.logger, "info", self, f"No filtering rules found.")
 
         
         time_of_day = time_of_day if time_of_day else self.character.current_time_of_day()
