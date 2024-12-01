@@ -153,8 +153,18 @@ class Sia:
         # do not answer if responding is disabled
         if not self.character.responding.get("enabled", True):
             return None
+
+
+        conversation = self.twitter.get_conversation(conversation_id=message.conversation_id)
+        conversation_first_message = self.memory.get_messages(id=message.conversation_id, platform=platform)
+        conversation = conversation_first_message + conversation
         
+        message_to_respond_str = f"[{message.wen_posted}] {message.author}: {message.content}"
+        log_message(self.logger, "info", self, f"Message to respond: {message_to_respond_str}")
+        conversation_str = "\n".join([f"[{msg.wen_posted}] {msg.author}: {msg.content}" for msg in conversation])
+        log_message(self.logger, "info", self, f"Conversation: {conversation_str}")
         
+                
         # do not answer if the message does not pass the filtering rules
         if self.character.responding.get("filtering_rules"):
             log_message(self.logger, "info", self, f"Checking the response against filtering rules: {self.character.responding.get('filtering_rules')}")
@@ -164,12 +174,18 @@ class Sia:
                     You are a message filtering AI. You are given a message and a list of filtering rules. You need to determine if the message passes the filtering rules. If it does, return 'True'. If it does not, return 'False' Only respond with 1 word: 'True' or 'False'.
                 """),
                 ("user", """
-                    Message: {message}
-                    Filtering rules: {filtering_rules}
+                    Conversation:
+                    {conversation}
+
+                    Message from the conversation to decide whether to respond to:
+                    {message}
+                    
+                    Filtering rules:
+                    {filtering_rules}
                 """)
             ])
             filtering_chain = prompt_template | llm_filtering
-            filtering_result = filtering_chain.invoke({"message": message.content, "filtering_rules": self.character.responding.get("filtering_rules")})
+            filtering_result = filtering_chain.invoke({"conversation": conversation_str, "message": message_to_respond_str, "filtering_rules": self.character.responding.get("filtering_rules")})
             log_message(self.logger, "info", self, f"Response filtering result: {filtering_result.content}")
 
             if filtering_result.content.lower() == "false":
@@ -179,15 +195,6 @@ class Sia:
 
         
         time_of_day = time_of_day if time_of_day else self.character.current_time_of_day()
-        
-        conversation = self.twitter.get_conversation(conversation_id=message.conversation_id)
-        conversation_first_message = self.memory.get_messages(id=message.conversation_id, platform=platform)
-        conversation = conversation_first_message + conversation
-        
-        message_to_respond_str = f"[{message.wen_posted}] {message.author}: {message.content}"
-        log_message(self.logger, "info", self, f"Message to respond: {message_to_respond_str}")
-        conversation_str = "\n".join([f"[{msg.wen_posted}] {msg.author}: {msg.content}" for msg in conversation])
-        log_message(self.logger, "info", self, f"Conversation: {conversation_str}")
         
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", """
