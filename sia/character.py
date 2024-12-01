@@ -7,7 +7,7 @@ from utils.logging_utils import setup_logging, log_message, enable_logging
 
 class SiaCharacter:
     
-    def __init__(self, name=None, name_id=None, twitter_username=None, intro=None, lore=None, bio=None, traits=None, moods=None, post_examples={}, post_parameters={}, message_examples={}, topics=None, plugins_settings={}, platform_settings={}, json_file=None, sia=None, logging_enabled=True):
+    def __init__(self, name=None, name_id=None, twitter_username=None, intro=None, lore=None, bio=None, traits=None, moods=None, post_examples={}, post_parameters={}, message_examples={}, topics=None, plugins_settings={}, platform_settings={}, responding={"enabled": True, "filtering_rules": []}, json_file=None, sia=None, logging_enabled=True):
         if json_file:
             if not name_id:
                 name_id = json_file.split('/')[-1].split('.')[0]
@@ -30,7 +30,8 @@ class SiaCharacter:
             self.topics = topics
             self.plugins_settings = plugins_settings
             self.platform_settings = platform_settings
-        
+            self.responding = responding
+            
         self.sia = sia
 
         self.logger = setup_logging()
@@ -76,6 +77,7 @@ class SiaCharacter:
         self.topics = data.get('topics') # optional
         self.plugins_settings = data.get('plugins', {}) # optional
         self.platform_settings = data.get('platform_settings', {}) # optional
+        self.responding = data.get('responding', {"enabled": True, "filtering_rules": []}) # optional
 
     def get_mood(self, time_of_day=None):
         """

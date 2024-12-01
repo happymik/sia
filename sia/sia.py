@@ -140,7 +140,40 @@ class Sia:
         return generated_post_schema, image_filepaths
 
 
-    def generate_response(self, message: SiaMessageSchema, platform="twitter", time_of_day=None) -> SiaMessageGeneratedSchema:
+    def generate_response(self, message: SiaMessageSchema, platform="twitter", time_of_day=None) -> SiaMessageGeneratedSchema|None:
+        """
+        Generate a response to a message.
+        
+        Output:
+        - SiaMessageGeneratedSchema
+        - None if an error occurred or if filtering rules are not passed
+        """
+
+
+        # do not answer if responding is disabled
+        if not self.character.responding.get("enabled", True):
+            return None
+        
+        
+        # do not answer if the message does not pass the filtering rules
+        if self.character.responding.get("filtering_rules"):
+            llm_filtering = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
+            prompt_template = ChatPromptTemplate.from_messages([
+                ("system", """
+                    You are a message filtering AI. You are given a message and a list of filtering rules. You need to determine if the message passes the filtering rules. If it does, return 'True'. If it does not, return 'False' Only respond with 1 word: 'True' or 'False'.
+                """),
+                ("user", """
+                    Message: {message}
+                    Filtering rules: {filtering_rules}
+                """)
+            ])
+            filtering_chain = prompt_template | llm_filtering
+            filtering_result = filtering_chain.invoke({"message": message.content, "filtering_rules": self.character.responding.get("filtering_rules")})
+            log_message(self.logger, "info", self, f"Response filtering result: {filtering_result.content}")
+
+            if filtering_result.content.lower() == "false":
+                return None
+
         
         time_of_day = time_of_day if time_of_day else self.character.current_time_of_day()
         

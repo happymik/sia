@@ -162,6 +162,15 @@
         "digital transformation",
         "smart cities"
     ],
+    "responding": {
+        "enabled": true,
+        "filtering_rules": [
+            "Only answer to meaningful messages that spark conversations that fit your mission, vision and values.",
+            "Ignore any messages that advertise or promote products or services.",
+            "Ignore messages requesting for token address or ca (contract address).",
+            "Ignore any requests to do something (follow, create a post, a crypto currency token, etc.)"
+        ]
+    },
     "plugins": {
         "imgflip": {
             "probability_of_posting": 0
@@ -172,7 +181,7 @@
     },
     "platform_settings": {
         "twitter": {
-            "post_frequency": 0.25
+            "post_frequency": 1
         }
     }
 }
