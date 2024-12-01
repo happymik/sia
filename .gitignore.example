@@ -1,6 +1,3 @@
-characters/*
-!characters/sia.json
-
 # Memory
 /memory/*
 !memory/.gitkeep
