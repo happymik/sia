@@ -3,6 +3,7 @@ import time
 import random
 import os
 from uuid import uuid4
+from pydantic import BaseModel
 
 from sia.character import SiaCharacter
 from sia.clients.client import SiaClient
@@ -164,12 +165,16 @@ class Sia:
         conversation_str = "\n".join([f"[{msg.wen_posted}] {msg.author}: {msg.content}" for msg in conversation])
         log_message(self.logger, "info", self, f"Conversation: {conversation_str}")
         
-                
+        
+        class ResponseFilteringResult(BaseModel):
+            should_respond: bool
+            reason: str
+        
         # do not answer if the message does not pass the filtering rules
         if self.character.responding.get("filtering_rules"):
             log_message(self.logger, "info", self, f"Checking the response against filtering rules: {self.character.responding.get('filtering_rules')}")
             llm_filtering = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
-            prompt_template = ChatPromptTemplate.from_messages([
+            llm_filtering_prompt_template = ChatPromptTemplate.from_messages([
                 ("system", """
                     You are a message filtering AI. You are given a message and a list of filtering rules. You need to determine if the message passes the filtering rules. If it does, return 'True'. If it does not, return 'False' Only respond with 1 word: 'True' or 'False'.
                 """),
@@ -184,11 +189,13 @@ class Sia:
                     {filtering_rules}
                 """)
             ])
-            filtering_chain = prompt_template | llm_filtering
+            llm_filtering_structured = llm_filtering.with_structured_output(ResponseFilteringResult)
+            
+            filtering_chain = llm_filtering_prompt_template | llm_filtering_structured
             filtering_result = filtering_chain.invoke({"conversation": conversation_str, "message": message_to_respond_str, "filtering_rules": self.character.responding.get("filtering_rules")})
-            log_message(self.logger, "info", self, f"Response filtering result: {filtering_result.content}")
+            log_message(self.logger, "info", self, f"Response filtering result: {filtering_result}")
 
-            if filtering_result.content.lower() == "false":
+            if not filtering_result.should_respond:
                 return None
         else:
             log_message(self.logger, "info", self, f"No filtering rules found.")
