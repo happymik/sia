@@ -38,7 +38,7 @@ def upgrade():
     # Copy data from the old table to the new table
     op.execute('''
         INSERT INTO message_temp (id, conversation_id, character, platform, author, content, response_to, wen_posted, original_data, flagged, message_metadata)
-        SELECT id, conversation_id, character, platform, author, content, response_to, wen_posted, original_data, 0, message_metadata
+        SELECT id, conversation_id, character, platform, author, content, response_to, wen_posted, original_data, False, message_metadata
         FROM message
     ''')
 
