@@ -57,7 +57,7 @@ async def main():
     # print(f"{'*'*100}\n\n")
 
 
-    times_of_day = sia.character.times_of_day()
+    # times_of_day = sia.character.times_of_day()
     
     start_time = time.time()
     
@@ -83,12 +83,11 @@ async def main():
             # for now, for testing purposes we generate a tweet
             #   using a random time of day as context for AI,
             #   ignoring the actual time of the day
-            time_of_day = random.choice(times_of_day)
+            # time_of_day = random.choice(times_of_day)
             post, media = sia.generate_post(
                 platform="twitter",
                 author=character_name,
-                character=character_name,
-                time_of_day=time_of_day
+                character=character_name
             )
             
             if post or media:

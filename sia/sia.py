@@ -72,6 +72,9 @@ class Sia:
             """)
         ])
         
+        if not time_of_day:
+            time_of_day = self.character.current_time_of_day()
+        
         ai_input = {
             "you_are": self.character.prompts.get("you_are"),
             "post_examples": self.character.get_post_examples("general", time_of_day=time_of_day, random_pick=7),
