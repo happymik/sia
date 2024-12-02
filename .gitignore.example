@@ -6,6 +6,8 @@
 /media/*
 !media/.gitkeep
 
+_not_for_repo
+
 # Python
 __pycache__/
 
