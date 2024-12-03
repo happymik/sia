@@ -99,7 +99,7 @@ class SiaTwitterOfficial(SiaClient):
         messages = []
 
         for i in range(0, len(my_tweet_ids), 10):
-            time.sleep(20)
+            time.sleep(61)
             batch = my_tweet_ids[i:i+10]
             query = " OR ".join([f"conversation_id:{id}" for id in batch])
             log_message(self.logger, "info", self, f"query: {query}")
