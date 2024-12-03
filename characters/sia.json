@@ -184,5 +184,26 @@
         "twitter": {
             "post_frequency": 2
         }
+    },
+    "knowledge_modules": {
+        "GoogleNewsModule": {
+            "search_frequency": 1,
+            "search_parameters": [
+                {
+                    "q": "artificial intelligence in robotics",
+                    "time_period": "last_day",
+                    "gl": "us",
+                    "num": 20
+                }
+            ],
+            "plugins": {
+                "LatestNews": {
+                    "usage_frequency": 1,
+                    "usage_condition": {
+                        "time_of_day": "afternoon"
+                    }
+                }
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
 import datetime
+from datetime import timezone
 import time
 import random
 import os
@@ -10,6 +11,9 @@ from sia.clients.client import SiaClient
 from sia.memory.memory import SiaMemory
 from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
 from sia.schemas.schemas import ResponseFilteringResultLLMSchema
+from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
+
+from sia.modules.knowledge.models_db import KnowledgeModuleSettingsModel
 
 from plugins.imgflip_meme_generator import ImgflipMemeGenerator
 
@@ -21,26 +25,93 @@ from utils.etc_utils import generate_image_dalle, save_image_from_url
 from utils.logging_utils import setup_logging, log_message, enable_logging
 
 
+
 class Sia:
     
-    def __init__(self, character: SiaCharacter, memory: SiaMemory = None, clients = None, twitter = None, logging_enabled=True):
-        self.character = character
-        if not self.character.sia:
-            self.character.sia = self
-        self.memory = memory if memory else SiaMemory(character=character)
+    def __init__(self, character_json_filepath: str, memory_db_path: str = None, clients = None, twitter_creds = None, plugins = [], knowledge_module_classes = [], logging_enabled=True):
+        self.character = SiaCharacter(json_file=character_json_filepath, sia=self)
+        self.memory = SiaMemory(character=self.character, db_path=memory_db_path)
         self.clients = clients
-        self.twitter = twitter
+        self.twitter = SiaTwitterOfficial(**twitter_creds)
         self.twitter.character = self.character
         self.twitter.memory = self.memory
-        print(f"twitter memory: {self.twitter.memory}")
-        print(f"twitter character: {self.twitter.character}")
+        self.plugins = plugins
 
         self.logger = setup_logging()
         enable_logging(logging_enabled)
         self.character.logging_enabled = logging_enabled
+        
+        self.knowledge_modules = [kmc(sia=self) for kmc in knowledge_module_classes]
+        
+        self.run_all_modules()
+    
+    
+    def run_all_modules(self):
+        import threading
+
+        def run_module(module):
+            module.run()
+
+        threads = []
+        for module in self.knowledge_modules:
+            thread = threading.Thread(target=run_module, args=(module,))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+
+    def get_modules_settings(self):
+        session = self.memory.Session()
+        
+        try:
+            modules_settings = {}
+            for module in self.knowledge_modules:
+                module_settings = session.query(KnowledgeModuleSettingsModel).filter(
+                    KnowledgeModuleSettingsModel.character_name_id == self.character.name_id,
+                    KnowledgeModuleSettingsModel.module_name == module.module_name
+                ).all()
+                log_message(self.logger, "info", self, f"Module settings: {module_settings}")
+                modules_settings[module.module_name] = module_settings[0].module_settings
+            return modules_settings
+        finally:
+            session.close()
+
+
+    def get_plugin(self, time_of_day = "afternoon"):
+        modules_settings = self.get_modules_settings()
+        
+        for module in self.knowledge_modules:
+            log_message(self.logger, "info", self, f"Module: {module.module_name}")
+            for plugin_name, plugin in module.plugins.items():
+                log_message(self.logger, "info", self, f"Plugin: {plugin_name}")
+                log_message(self.logger, "info", self, f"Usage condition: {modules_settings[module.module_name].get('plugins', {}).get(plugin_name, {}).get('usage_condition', {}).get('time_of_day')}")
+                log_message(self.logger, "info", self, f"Time of day: {time_of_day}")
+                if modules_settings[module.module_name].get('plugins', {}).get(plugin_name, {}).get('usage_condition', {}).get('time_of_day') == time_of_day:
+                    return plugin
+        
+        # for module in self.knowledge_modules:
+        #     for plugin_name, plugin in module.plugins.items():
+                
+        #         if plugin.is_relevant_to_time_of_day(time_of_day) and self.character.moods.get(time_of_day) in plugin.supported_moods:
+        #             return plugin
+        return None
+        
+
 
 
     def generate_post(self, platform="twitter", author=None, character=None, time_of_day=None):
+
+        plugin = self.get_plugin(time_of_day=self.character.current_time_of_day())
+        plugin_prompt = ""
+        if plugin:
+            plugin_prompt = plugin.get_instructions_and_knowledge()
+            log_message(self.logger, "info", self, f"Plugin prompt: {plugin_prompt}")
+        else:
+            log_message(self.logger, "info", self, f"No plugin found")
+        
+        log_message(self.logger, "info", self, f"Plugin prompt: {plugin_prompt}")
 
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", """
@@ -55,6 +126,8 @@ class Sia:
                 {previous_posts}
                 
                 You are posting to: {platform}
+                
+                {plugin_prompt}
             """),
             ("user", """
                 Generate your new post.
@@ -81,6 +154,7 @@ class Sia:
             "previous_posts": [f"[{post.wen_posted}] {post.content}" for post in self.memory.get_messages()[-10:]],
             "platform": platform,
             "length_range": random.choice(self.character.post_parameters.get("length_ranges")),
+            "plugin_prompt": plugin_prompt,
             # "formatting": self.character.post_parameters.get("formatting")
         }
         
@@ -140,6 +214,14 @@ class Sia:
             author=self.character.twitter_username,
             character=self.character.name
         )
+        
+        
+        if plugin:
+            log_message(self.logger, "info", self, f"Updating settings for {plugin.plugin_name}")
+            plugin.update_settings(next_use_after=datetime.datetime.now(timezone.utc) + datetime.timedelta(hours=1))
+        else:
+            log_message(self.logger, "info", self, f"No plugin found")
+
 
         return generated_post_schema, image_filepaths
 

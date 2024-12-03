@@ -12,6 +12,7 @@ from sia.character import SiaCharacter
 from sia.memory.memory import SiaMemory
 # from sia.clients.telegram.telegram_client import SiaTelegram
 from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
+from sia.modules.knowledge.GoogleNews.google_news import GoogleNewsModule
 
 from tweepy import Forbidden
 
@@ -26,28 +27,37 @@ enable_logging(logging_enabled)
 async def main():
     character_name_id = os.getenv("CHARACTER_NAME_ID")
 
-    character = SiaCharacter(json_file=f"characters/{character_name_id}.json")
     sia = Sia(
-        character=character,
-        twitter=SiaTwitterOfficial(
-            api_key=os.getenv("TW_API_KEY"),
-            api_secret_key=os.getenv("TW_API_KEY_SECRET"),
-            access_token=os.getenv("TW_ACCESS_TOKEN"),
-            access_token_secret=os.getenv("TW_ACCESS_TOKEN_SECRET"),
-            bearer_token=os.getenv("TW_BEARER_TOKEN")
-        ),
-        memory=SiaMemory(
-            db_path=os.getenv("DB_PATH"),
-            character=character
-        ),
+        character_json_filepath=f"characters/{character_name_id}.json",
+        twitter_creds = {
+            "api_key": os.getenv("TW_API_KEY"),
+            "api_secret_key": os.getenv("TW_API_KEY_SECRET"),
+            "access_token": os.getenv("TW_ACCESS_TOKEN"),
+            "access_token_secret": os.getenv("TW_ACCESS_TOKEN_SECRET"),
+            "bearer_token": os.getenv("TW_BEARER_TOKEN")
+        },
+        memory_db_path=os.getenv("DB_PATH"),
+        knowledge_module_classes=[GoogleNewsModule],
         logging_enabled=logging_enabled
     )
     
+    modules_settings = sia.get_modules_settings()
+    print(f"Modules settings: {modules_settings}")
+    print()
+    plugin = sia.get_plugin()
+    print(f"Plugin: {plugin}")
+    try:
+        res = plugin.get_instructions_and_knowledge()
+        print(f"Result: {res}")
+    except Exception as e:
+        print(f"Error executing plugin: {e}")
+
+
     character_name = sia.character.name
     
     my_tweet_ids = sia.twitter.get_my_tweet_ids()
     print(f"My tweet ids: {my_tweet_ids}")
-        
+    
     
     # sia_previous_posts = sia.memory.get_messages()
     # print("Posts from memory:\n")
