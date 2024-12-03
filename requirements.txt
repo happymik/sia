@@ -8,3 +8,4 @@ tweepy==4.14.0
 langchain_community==0.3.8
 alembic==1.14.0
 psycopg2==2.9.10
+sqlalchemy==2.0.35
