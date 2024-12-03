@@ -7,7 +7,7 @@ from utils.logging_utils import setup_logging, log_message, enable_logging
 
 class SiaCharacter:
     
-    def __init__(self, name=None, name_id=None, twitter_username=None, intro=None, lore=None, bio=None, traits=None, moods=None, post_examples={}, post_parameters={}, message_examples={}, topics=None, plugins_settings={}, platform_settings={}, responding={"enabled": True, "filtering_rules": []}, knowledge_modules={}, json_file=None, sia=None, logging_enabled=True):
+    def __init__(self, name=None, name_id=None, twitter_username=None, intro=None, lore=None, instructions=None, bio=None, traits=None, moods=None, post_examples={}, post_parameters={}, message_examples={}, topics=None, plugins_settings={}, platform_settings={}, responding={"enabled": True, "filtering_rules": []}, knowledge_modules={}, json_file=None, sia=None, logging_enabled=True):
         if json_file:
             if not name_id:
                 name_id = json_file.split('/')[-1].split('.')[0]
@@ -21,6 +21,7 @@ class SiaCharacter:
             self.twitter_username = twitter_username
             self.intro = intro
             self.lore = lore
+            self.instructions = instructions
             self.bio = bio
             self.traits = traits
             self.moods = moods
@@ -46,6 +47,9 @@ class SiaCharacter:
                 Here's more about you:
                 {self.lore}.
                 
+                Here are some important instructions to follow:
+                {self.instructions}
+                
                 Current date and time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}.
                 
                 Your current mood is {self.get_mood()}.
@@ -69,6 +73,7 @@ class SiaCharacter:
         self.twitter_username = data['twitter_username'] # required
         self.intro = data['intro'] # required
         self.lore = data['lore'] # required
+        self.instructions = data.get('instructions') # optional
         self.bio = data.get('bio') # optional
         self.traits = data.get('traits') # optional
         self.moods = data.get('moods') # optional
