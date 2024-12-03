@@ -52,8 +52,8 @@ class SiaTwitterOfficial(SiaClient):
             response = self.client.create_tweet(
                 text=post.content,
                 **({"media_ids": media_ids} if media_ids else {}),
-                in_reply_to_tweet_id=in_reply_to_tweet_id
-                # **({"in_reply_to_tweet_id": in_reply_to_tweet_id} if in_reply_to_tweet_id else {})
+                # in_reply_to_tweet_id=in_reply_to_tweet_id
+                **({"in_reply_to_tweet_id": in_reply_to_tweet_id} if in_reply_to_tweet_id else {})
             )
             print(f"Tweet sent successfully!: {response}")
             return response.data['id']
