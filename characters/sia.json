@@ -155,7 +155,7 @@
     },
     "platform_settings": {
         "twitter": {
-            "enabled": false,
+            "enabled": true,
             "post_frequency": 0.1,
             "username": "sia_really"
         },
