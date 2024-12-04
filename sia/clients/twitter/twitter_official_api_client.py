@@ -201,7 +201,7 @@ class SiaTwitterOfficial(SiaClient):
                     print(f"Generated post: {len(post.content)} characters")
                     tweet_id = self.publish_post(post, media)
                     if tweet_id and tweet_id is not Forbidden:
-                        self.memory.add_message(post, tweet_id)
+                        self.memory.add_message(message_id=tweet_id, message=post)
 
                         character_settings.character_settings = {
                             "twitter": {
@@ -242,7 +242,7 @@ class SiaTwitterOfficial(SiaClient):
                             print(f"No response generated for reply: {r}")
                             continue
                         print(f"Generated response: {len(generated_response.content)} characters")
-                        tweet_id = sia.twitter.publish_post(post=generated_response, in_reply_to_tweet_id=r.id)
+                        tweet_id = self.sia.twitter.publish_post(post=generated_response, in_reply_to_tweet_id=r.id)
                         replies_sent += 1
                         if isinstance(tweet_id, Forbidden):
                             print(f"\n\nFailed to send reply: {tweet_id}. Sleeping for 10 minutes.\n\n")
