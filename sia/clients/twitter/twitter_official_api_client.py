@@ -11,12 +11,11 @@ from sia.clients.client import SiaClient
 from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
 from sia.memory.memory import SiaMemory
 from sia.character import SiaCharacter
-
 from utils.logging_utils import setup_logging, log_message, enable_logging
 
 class SiaTwitterOfficial(SiaClient):
     
-    def __init__(self, api_key, api_secret_key, access_token, access_token_secret, bearer_token, character: SiaCharacter = None, memory: SiaMemory = None, logging_enabled=True):
+    def __init__(self, api_key, api_secret_key, access_token, access_token_secret, bearer_token, sia = None, character: SiaCharacter = None, memory: SiaMemory = None, logging_enabled=True):
         super().__init__(
             client=tweepy.Client(
                 consumer_key=api_key, consumer_secret=api_secret_key,
@@ -34,6 +33,7 @@ class SiaTwitterOfficial(SiaClient):
         self.access_token_secret = access_token_secret
         self.memory = memory
         self.character = character
+        self.sia = sia
 
 
     def publish_post(self, post:SiaMessageGeneratedSchema, media:dict=[], in_reply_to_tweet_id:str=None) -> str:
