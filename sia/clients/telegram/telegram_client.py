@@ -119,39 +119,39 @@ class SiaTelegram(SiaClient):
         self.is_time_to_post()
         while True:
             
-            # if self.chat_id:
+            if self.chat_id:
                 
-            #     bot_username = self.sia.character.platform_settings.get("telegram", {}).get("username", "<no bot username>")
+                bot_username = self.sia.character.platform_settings.get("telegram", {}).get("username", "<no bot username>")
 
-            #     post, media = self.sia.generate_post(
-            #         platform=self.platform_name,
-            #         author=bot_username,
-            #         character=self.sia.character.name
-            #     )
+                post, media = self.sia.generate_post(
+                    platform=self.platform_name,
+                    author=bot_username,
+                    character=self.sia.character.name
+                )
 
-            #     try:
-            #         message_send_response = await self.bot.send_message(chat_id=self.chat_id, text=post.content)
-            #         print(f"New message id: {message_send_response.message_id}")
+                try:
+                    message_send_response = await self.bot.send_message(chat_id=self.chat_id, text=post.content)
+                    print(f"New message id: {message_send_response.message_id}")
 
-            #         self.sia.memory.add_message(
-            #             message_id=f"{self.chat_id}-{message_send_response.message_id}",
-            #             message=SiaMessageGeneratedSchema(
-            #                 platform=self.platform_name,
-            #                 character=self.sia.character.name,
-            #                 author=bot_username,
-            #                 content=post.content,
-            #                 conversation_id=str(self.chat_id)
-            #             )
-            #         )
+                    self.sia.memory.add_message(
+                        message_id=f"{self.chat_id}-{message_send_response.message_id}",
+                        message=SiaMessageGeneratedSchema(
+                            platform=self.platform_name,
+                            character=self.sia.character.name,
+                            author=bot_username,
+                            content=post.content,
+                            conversation_id=str(self.chat_id)
+                        )
+                    )
 
-            #         if media:
-            #             print(f"Sending media: {media}")
-            #             for media_file in media:
-            #                 with open(media_file, 'rb') as photo_file:
-            #                     await self.bot.send_photo(chat_id=self.chat_id, photo=photo_file)
-            #         print("Post sent successfully!")
-            #     except TelegramError as e:
-            #         print(f"Failed to send post: {e}")
+                    if media:
+                        print(f"Sending media: {media}")
+                        for media_file in media:
+                            with open(media_file, 'rb') as photo_file:
+                                await self.bot.send_photo(chat_id=self.chat_id, photo=photo_file)
+                    print("Post sent successfully!")
+                except TelegramError as e:
+                    print(f"Failed to send post: {e}")
             post_frequency_hours = self.sia.character.platform_settings.get("telegram", {}).get("post_frequency", 2)
             await asyncio.sleep(post_frequency_hours * 3600)  # Wait for the specified number of hours
 
