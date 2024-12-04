@@ -41,22 +41,22 @@ async def main():
         logging_enabled=logging_enabled
     )
     
-    modules_settings = sia.get_modules_settings()
-    print(f"Modules settings: {modules_settings}")
-    print()
-    plugin = sia.get_plugin()
-    print(f"Plugin: {plugin}")
-    try:
-        res = plugin.get_instructions_and_knowledge()
-        print(f"Result: {res}")
-    except Exception as e:
-        print(f"Error executing plugin: {e}")
+    # modules_settings = sia.get_modules_settings()
+    # print(f"Modules settings: {modules_settings}")
+    # print()
+    # plugin = sia.get_plugin()
+    # print(f"Plugin: {plugin}")
+    # try:
+    #     res = plugin.get_instructions_and_knowledge()
+    #     print(f"Result: {res}")
+    # except Exception as e:
+    #     print(f"Error executing plugin: {e}")
 
 
     character_name = sia.character.name
     
-    my_tweet_ids = sia.twitter.get_my_tweet_ids()
-    print(f"My tweet ids: {my_tweet_ids}")
+    # my_tweet_ids = sia.twitter.get_my_tweet_ids()
+    # print(f"My tweet ids: {my_tweet_ids}")
     
     
     # sia_previous_posts = sia.memory.get_messages()
@@ -90,10 +90,6 @@ async def main():
         # posting
         #   new tweet
         if time.time() > next_post_time:
-            # for now, for testing purposes we generate a tweet
-            #   using a random time of day as context for AI,
-            #   ignoring the actual time of the day
-            # time_of_day = random.choice(times_of_day)
             post, media = sia.generate_post(
                 platform="twitter",
                 author=character_name,
