@@ -1,0 +1,195 @@
+import random
+import asyncio
+from telegram import Bot, Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram.error import TelegramError
+from sia.clients.client import SiaClient
+from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
+
+import concurrent.futures
+
+from utils.logging_utils import setup_logging, log_message, enable_logging
+
+
+class SiaTelegram(SiaClient):
+    platform_name = 'telegram'
+    
+    
+    def __init__(self, sia, tg_bot_token, chat_id=None, logging_enabled=True):
+        super().__init__(client=None)
+        self.tg_bot_token = tg_bot_token
+        self.bot = Bot(token=self.tg_bot_token)
+        self.application = ApplicationBuilder().token(tg_bot_token).build()
+        self.chat_id = chat_id  # Set this to the chat ID where you want to post messages
+        self.sia = sia
+        self.logging_enabled = logging_enabled
+
+        self.logger = setup_logging()
+        enable_logging(self.logging_enabled)
+        
+        
+    async def start(self, update: Update, context: CallbackContext):
+        self.chat_id = update.message.chat_id  # Store chat ID for posting messages
+        await update.message.reply_text('Hello! I am your bot.')
+
+
+    async def handle_message(self, update: Update, context: CallbackContext):
+        message_text = update.message.text
+        user = update.message.from_user
+        user_id = user.id
+        username = user.username or user.first_name
+        chat = update.message.chat
+        chat_id = chat.id
+        chat_title = chat.title or "Private Chat"
+        chat_username = chat.username or "No username"
+        
+        message = SiaMessageGeneratedSchema(
+            platform=self.platform_name,
+            character=self.sia.character.name,
+            author=username,
+            content=message_text,
+            conversation_id=str(chat_id)
+        )
+        
+        self.sia.memory.add_message(
+            message_id=f"{chat_id}-{update.message.message_id}",
+            message=message
+        )
+
+        print(f"Received message from {username} (ID: {user_id}) in chat '{chat_title}' (ID: {chat_id}, t.me/{chat_username}), message ID {update.message.message_id}: {message_text}")
+
+
+        # Check if the message is a reply to another message
+        if update.message.reply_to_message:
+            original_message = update.message.reply_to_message
+            original_user = original_message.from_user
+
+            # Extract user ID and username of the original message sender
+            original_user_id = original_user.id
+            original_username = original_user.username or original_user.first_name
+            
+            if original_username == self.sia.character.platform_settings.get("telegram", {}).get("username", "<no bot username>"):
+
+                generated_response = self.sia.generate_response(
+                    message=SiaMessageSchema(
+                        id=f"{self.chat_id}-{update.message.message_id}",
+                        **message.dict()
+                    )
+                )
+                
+                if generated_response:
+                
+                    tg_reply_response = await update.message.reply_text(generated_response.content)
+
+                    self.sia.memory.add_message(
+                        message_id=f"{self.chat_id}-{tg_reply_response.message_id}",
+                        message=generated_response
+                    )
+
+        # Respond to mentions
+        if f"@{context.bot.username}" in message_text:
+
+            generated_response = self.sia.generate_response(
+                message=SiaMessageSchema(
+                    id=f"{self.chat_id}-{update.message.message_id}",
+                    **message.dict()
+                )
+            )
+            
+            if generated_response:
+            
+                tg_reply_response = await update.message.reply_text(generated_response.content)
+
+                self.sia.memory.add_message(
+                    message_id=f"{self.chat_id}-{tg_reply_response.message_id}",
+                    message=generated_response
+                )
+
+    
+    
+    def is_time_to_post(self):
+        platform_settings = self.sia.character.platform_settings['telegram']
+
+        log_message(self.logger, "info", self, f"Character settings: {platform_settings['post_frequency']}")
+
+        return True
+
+
+    async def periodic_post(self):
+        self.is_time_to_post()
+        while True:
+            
+            # if self.chat_id:
+                
+            #     bot_username = self.sia.character.platform_settings.get("telegram", {}).get("username", "<no bot username>")
+
+            #     post, media = self.sia.generate_post(
+            #         platform=self.platform_name,
+            #         author=bot_username,
+            #         character=self.sia.character.name
+            #     )
+
+            #     try:
+            #         message_send_response = await self.bot.send_message(chat_id=self.chat_id, text=post.content)
+            #         print(f"New message id: {message_send_response.message_id}")
+
+            #         self.sia.memory.add_message(
+            #             message_id=f"{self.chat_id}-{message_send_response.message_id}",
+            #             message=SiaMessageGeneratedSchema(
+            #                 platform=self.platform_name,
+            #                 character=self.sia.character.name,
+            #                 author=bot_username,
+            #                 content=post.content,
+            #                 conversation_id=str(self.chat_id)
+            #             )
+            #         )
+
+            #         if media:
+            #             print(f"Sending media: {media}")
+            #             for media_file in media:
+            #                 with open(media_file, 'rb') as photo_file:
+            #                     await self.bot.send_photo(chat_id=self.chat_id, photo=photo_file)
+            #         print("Post sent successfully!")
+            #     except TelegramError as e:
+            #         print(f"Failed to send post: {e}")
+            post_frequency_hours = self.sia.character.platform_settings.get("telegram", {}).get("post_frequency", 2)
+            await asyncio.sleep(post_frequency_hours * 3600)  # Wait for the specified number of hours
+
+
+
+    async def run(self):
+        print("Starting Telegram client...")  # Debugging statement
+
+        # Add handlers to the application
+        self.application.add_handler(CommandHandler("start", self.start))
+        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+
+        # Initialize the application
+        await self.application.initialize()
+
+        # Start the periodic posting task
+        asyncio.create_task(self.periodic_post())
+
+        # Start the bot using start() and updater.start_polling()
+        await self.application.start()
+        await self.application.updater.start_polling()
+
+        # Keep the application running
+        while True:
+            await asyncio.sleep(3600)  # Sleep for an hour, adjust as needed
+
+
+    # async def run(self):
+    #     # Add handlers to the application
+    #     self.application.add_handler(CommandHandler("start", self.start))
+    #     self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+
+    #     # Initialize the application
+    #     await self.application.initialize()
+
+    #     # Start the periodic posting task
+    #     asyncio.create_task(self.periodic_post())
+
+    #     # Start the bot using run_polling
+    #     await self.application.start()
+    #     await self.application.updater.start_polling()
