@@ -1,6 +1,8 @@
 import os
 import json
 import time
+import random
+from datetime import datetime
 
 import tweepy
 from tweepy import Tweet, Forbidden
@@ -165,3 +167,91 @@ class SiaTwitterOfficial(SiaClient):
     def get_conversation(self, conversation_id: str) -> list[SiaMessageSchema]:
         messages = self.memory.get_messages(conversation_id=conversation_id, sort_by="wen_posted", sort_order="asc", flagged=False)
         return messages
+
+
+
+    def run(self):
+
+        if not self.character.platform_settings.get("twitter", {}).get("enabled", True):
+            return
+        
+        while 1:
+
+            character_settings = self.memory.get_character_settings()
+            
+            next_post_time = character_settings.character_settings.get('twitter', {}).get('next_post_time', 0)
+            next_post_datetime = datetime.fromtimestamp(next_post_time).strftime('%Y-%m-%d %H:%M:%S') if next_post_time else "N/A"
+            now_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(f"Current time: {now_time}")
+            next_post_time_seconds = next_post_time - time.time()
+            next_post_hours = next_post_time_seconds // 3600
+            next_post_minutes = (next_post_time_seconds % 3600) // 60
+            print(f"Next post time: {next_post_datetime} (posting in {next_post_hours}h {next_post_minutes}m)")
+            
+            # posting
+            #   new tweet
+            if time.time() > next_post_time:
+                post, media = self.sia.generate_post(
+                    platform="twitter",
+                    author=self.character.twitter_username,
+                    character=self.character.name
+                )
+                
+                if post or media:
+                    print(f"Generated post: {len(post.content)} characters")
+                    tweet_id = self.publish_post(post, media)
+                    if tweet_id and tweet_id is not Forbidden:
+                        self.memory.add_message(post, tweet_id)
+
+                        character_settings.character_settings = {
+                            "twitter": {
+                                "next_post_time": time.time() + self.character.platform_settings.get("twitter", {}).get("post_frequency", 2) * 3600
+                            }
+                        }
+                        self.memory.update_character_settings(character_settings)
+                else:
+                    log_message(self.logger, "info", self, "No post or media generated.")
+
+                time.sleep(30)
+
+
+            # replying
+            #   to new replies
+            
+            if self.character.responding.get("enabled", True):
+                print("Checking for new replies...")
+                replies = self.get_new_replies_to_my_tweets()
+                if replies:
+                    
+                    # randomize the order of replies
+                    replies.sort(key=lambda x: random.random())
+                    
+                    for r in replies:
+                        
+                        max_responses_an_hour = character_settings.character_settings.get("responding", {}).get("responses_an_hour", 3)
+                        log_message(self.logger, "info", self, f"Replies sent during this hour: {replies_sent}, max allowed: {max_responses_an_hour}")
+                        if replies_sent >= max_responses_an_hour:
+                            break
+
+                        print(f"Reply: {r}")
+                        if r.flagged:
+                            print(f"Skipping flagged reply: {r}")
+                            continue
+                        generated_response = self.generate_response(r)
+                        if not generated_response:
+                            print(f"No response generated for reply: {r}")
+                            continue
+                        print(f"Generated response: {len(generated_response.content)} characters")
+                        tweet_id = sia.twitter.publish_post(post=generated_response, in_reply_to_tweet_id=r.id)
+                        replies_sent += 1
+                        if isinstance(tweet_id, Forbidden):
+                            print(f"\n\nFailed to send reply: {tweet_id}. Sleeping for 10 minutes.\n\n")
+                            time.sleep(600)
+                        time.sleep(random.randint(20, 40))
+                else:
+                    print("No new replies yet.")
+                print("\n\n")
+
+            time.sleep(random.randint(20, 40))
+
+

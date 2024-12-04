@@ -21,13 +21,13 @@ class SiaMemory:
         enable_logging(self.logging_enabled)
 
 
-    def add_message(self, message: SiaMessageGeneratedSchema, tweet_id: str = None, original_data: dict = None) -> SiaMessageSchema:
+    def add_message(self, message_id: str, message: SiaMessageGeneratedSchema, original_data: dict = None) -> SiaMessageSchema:
         session = self.Session()
 
         message_model = SiaMessageModel(
-            id=tweet_id,
-            character=message.character,
+            id=message_id,
             platform=message.platform,
+            character=message.character,
             author=message.author,
             content=message.content,
             conversation_id=message.conversation_id,
@@ -36,7 +36,7 @@ class SiaMemory:
             message_metadata=message.message_metadata,
             original_data=original_data
         )
-
+        
         try:
             # Serialize original_data if it's a dictionary
             if isinstance(original_data, dict):

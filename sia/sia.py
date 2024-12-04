@@ -5,6 +5,8 @@ import random
 import os
 from uuid import uuid4
 from pydantic import BaseModel
+import asyncio
+import threading
 
 from sia.character import SiaCharacter
 from sia.clients.client import SiaClient
@@ -12,7 +14,7 @@ from sia.memory.memory import SiaMemory
 from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
 from sia.schemas.schemas import ResponseFilteringResultLLMSchema
 from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
-
+from sia.clients.telegram.telegram_client import SiaTelegram
 from sia.modules.knowledge.models_db import KnowledgeModuleSettingsModel
 
 from plugins.imgflip_meme_generator import ImgflipMemeGenerator
@@ -28,11 +30,22 @@ from utils.logging_utils import setup_logging, log_message, enable_logging
 
 class Sia:
     
-    def __init__(self, character_json_filepath: str, memory_db_path: str = None, clients = None, twitter_creds = None, plugins = [], knowledge_module_classes = [], logging_enabled=True):
+    def __init__(
+        self,
+        character_json_filepath: str,
+        memory_db_path: str = None,
+        clients = None,
+        twitter_creds = None,
+        telegram_creds = None,
+        plugins = [],
+        knowledge_module_classes = [],
+        logging_enabled=True
+    ):
         self.character = SiaCharacter(json_file=character_json_filepath, sia=self)
         self.memory = SiaMemory(character=self.character, db_path=memory_db_path)
         self.clients = clients
-        self.twitter = SiaTwitterOfficial(**twitter_creds)
+        self.twitter = SiaTwitterOfficial(**twitter_creds) if twitter_creds else None
+        self.telegram = SiaTelegram(sia=self, **telegram_creds, chat_id=self.character.platform_settings.get("telegram", {}).get("chat_id", None)) if telegram_creds else None
         self.twitter.character = self.character
         self.twitter.memory = self.memory
         self.plugins = plugins
@@ -98,8 +111,6 @@ class Sia:
         #             return plugin
         return None
         
-
-
 
     def generate_post(self, platform="twitter", author=None, character=None, time_of_day=None):
 
@@ -341,10 +352,11 @@ class Sia:
     
         generated_response_schema = SiaMessageGeneratedSchema(
             content=generated_response.content,
-            platform=platform,
-            author=self.character.name,
+            platform=message.platform,
+            author=self.character.platform_settings.get(message.platform, {}).get("username", self.character.name),
             character=self.character.name,
-            response_to=message.id
+            response_to=message.id,
+            conversation_id=message.conversation_id
         )
         log_message(self.logger, "info", self, f"Generated response: {generated_response_schema}")
 
@@ -356,3 +368,21 @@ class Sia:
         return tweet_id
 
 
+    def run(self):
+        # Create a thread for the Telegram client
+        telegram_thread = threading.Thread(target=self.run_telegram)
+        telegram_thread.start()
+
+        # Create a thread for the Twitter client
+        twitter_thread = threading.Thread(target=self.run_twitter)
+        twitter_thread.start()
+
+        # Join the threads for the main program to wait for them
+        telegram_thread.join()
+        twitter_thread.join()
+
+    def run_telegram(self):
+        asyncio.run(self.telegram.run())
+
+    def run_twitter(self):
+        self.twitter.run()
