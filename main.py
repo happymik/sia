@@ -10,7 +10,7 @@ load_dotenv()
 from sia.sia import Sia
 from sia.character import SiaCharacter
 from sia.memory.memory import SiaMemory
-# from sia.clients.telegram.telegram_client import SiaTelegram
+from sia.clients.telegram.telegram_client import SiaTelegram
 from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
 from sia.modules.knowledge.GoogleNews.google_news import GoogleNewsModule
 
