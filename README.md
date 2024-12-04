@@ -23,6 +23,14 @@ Sia is an agentic AI framework designed to make digital agents feel alive, adapt
    - Sia doesn’t just react—it anticipates. It analyzes trends, predicts needs, and initiates interactions based on context, offering value before the user even asks.
 
 
+
+# Sia implementation examples
+
+- https://x.com/sia_really - Sia herself
+- https://x.com/AIngryMarketer/ - AI+marketing memes
+
+
+
 # Creating new AI agent using Sia framework
 
 ### 1. Create new repo on Github (can be public or private).
