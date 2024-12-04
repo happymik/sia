@@ -10,3 +10,5 @@ alembic==1.14.0
 psycopg2==2.9.10
 sqlalchemy==2.0.35
 python-dateutil==2.9.0.post0
+python-telegram-bot==21.8
+pytz==2024.2
