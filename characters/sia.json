@@ -156,6 +156,9 @@
     "platform_settings": {
         "twitter": {
             "post_frequency": 2
+        },
+        "telegram": {
+            "post_frequency": 2
         }
     },
     "knowledge_modules": {
