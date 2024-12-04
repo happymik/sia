@@ -156,11 +156,11 @@
     "platform_settings": {
         "twitter": {
             "enabled": true,
-            "post_frequency": 0.1,
+            "post_frequency": 2,
             "username": "sia_really"
         },
         "telegram": {
-            "post_frequency": 0.1,
+            "post_frequency": 2,
             "chat_id": "-1002312730638",
             "username": "realsia_bot"
         }
