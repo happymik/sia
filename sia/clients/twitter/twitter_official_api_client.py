@@ -170,7 +170,7 @@ class SiaTwitterOfficial(SiaClient):
 
 
 
-    def run(self):
+    async def run(self):
 
         if not self.character.platform_settings.get("twitter", {}).get("enabled", True):
             return

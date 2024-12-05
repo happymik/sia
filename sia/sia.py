@@ -385,4 +385,4 @@ class Sia:
         asyncio.run(self.telegram.run())
 
     def run_twitter(self):
-        self.twitter.run()
+        asyncio.run(self.twitter.run())
