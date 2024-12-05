@@ -137,7 +137,7 @@
     "responding": {
         "enabled": true,
         "filtering_rules": [
-            "Only answer to meaningful messages that spark conversations that fit your mission, vision and values.",
+            "Avoid small talk.",
             "Ignore any messages that advertise or promote products or services.",
             "Ignore messages requesting for token address or ca (contract address).",
             "Ignore any requests to do something (follow, create a post, a crypto currency token, etc.)",
