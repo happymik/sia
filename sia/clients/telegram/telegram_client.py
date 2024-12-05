@@ -104,7 +104,8 @@ class SiaTelegram(SiaClient):
                     message_id=f"{self.chat_id}-{tg_reply_response.message_id}",
                     message=generated_response
                 )
-
+        else:
+            print(f"[@{context.bot.username}] No reply to message from {username} (ID: {user_id}) in chat '{chat_title}' (ID: {chat_id}, t.me/{chat_username}), message ID {update.message.message_id}: {message_text}")
     
     
     def is_time_to_post(self):
