@@ -1,12 +1,9 @@
-import random
 import asyncio
 from telegram import Bot, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram.error import TelegramError
 from sia.clients.client import SiaClient
 from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
-
-import concurrent.futures
 
 from utils.logging_utils import setup_logging, log_message, enable_logging
 
@@ -159,38 +156,52 @@ class SiaTelegram(SiaClient):
 
 
     async def run(self):
+        import logging
+        from telegram.error import Conflict, NetworkError
+
+        # Configure logging
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+
         print("Starting Telegram client...")  # Debugging statement
+        
+        conflict_wait_time = 10
 
-        # Add handlers to the application
-        self.application.add_handler(CommandHandler("start", self.start))
-        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
-
-        # Initialize the application
-        await self.application.initialize()
-
-        # Start the periodic posting task
-        asyncio.create_task(self.periodic_post())
-
-        # Start the bot using start() and updater.start_polling()
-        await self.application.start()
-        await self.application.updater.start_polling()
-
-        # Keep the application running
         while True:
-            await asyncio.sleep(3600)  # Sleep for an hour, adjust as needed
+            try:
+                # Add handlers to the application
+                self.application.add_handler(CommandHandler("start", self.start))
+                self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
 
+                # Initialize the application
+                await self.application.initialize()
 
-    # async def run(self):
-    #     # Add handlers to the application
-    #     self.application.add_handler(CommandHandler("start", self.start))
-    #     self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+                # Start the periodic posting task
+                asyncio.create_task(self.periodic_post())
 
-    #     # Initialize the application
-    #     await self.application.initialize()
+                # Start the bot using start() and updater.start_polling()
+                await self.application.start()
+                await self.application.updater.start_polling()
 
-    #     # Start the periodic posting task
-    #     asyncio.create_task(self.periodic_post())
+                # Keep the application running
+                while True:
+                    await asyncio.sleep(3600)  # Sleep for an hour, adjust as needed
 
-    #     # Start the bot using run_polling
-    #     await self.application.start()
-    #     await self.application.updater.start_polling()
+            except Conflict:
+                logger.error("Conflict error: Another instance of the bot is running.")
+                # Wait before retrying
+                await asyncio.sleep(conflict_wait_time)
+                conflict_wait_time += 5
+                logger.info("Retrying to start the bot...")
+
+            except NetworkError as e:
+                logger.error("Network error occurred: %s", e)
+                # Handle network errors, possibly with a retry mechanism
+                await asyncio.sleep(5)
+
+            except Exception as e:
+                logger.error("An unexpected error occurred: %s", e)
+                break  # Exit the loop if an unexpected error occurs
+
+            # Sleep for a while before retrying
+            await asyncio.sleep(1)
