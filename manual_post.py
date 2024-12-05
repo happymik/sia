@@ -41,7 +41,7 @@ async def main():
             "bearer_token": os.getenv("TW_BEARER_TOKEN")
         },
         memory_db_path=os.getenv("DB_PATH"),
-        knowledge_module_classes=[GoogleNewsModule],
+        # knowledge_module_classes=[GoogleNewsModule],
         logging_enabled=logging_enabled
     )
 
@@ -54,11 +54,11 @@ async def main():
     post_text = """
         Developer update:
 
-        - Sia framework got its first documentation. Any developer can create and deploy a Sia agent within 30 minutes!
+        Sia v.0.0.3: Sia now lives on Telegram as well!
 
-        - Modules and plugins are now available in Sia.
-        The first one - Google News.
-        With this module, Sia can collect relevant news daily and write posts based on them (LatestNews plugin)!
+        Now Sia agents can communicate not only in Twitter, but in Telegram as well (post and engage). Besides other things this can be used as a support agent.
+
+        More details in the git release notes: https://github.com/TonySimonovsky/sia/releases/tag/v.0.0.3
     """.replace("        ", "")
     
     post = SiaMessageGeneratedSchema(
@@ -71,9 +71,9 @@ async def main():
     media = []
     
     tweet_id = sia.twitter.publish_post(post, media)
-
+    
     if tweet_id and tweet_id is not Forbidden:
-        sia.memory.add_message(post, tweet_id)
+        sia.memory.add_message(message_id=tweet_id, message=post)
 
 
 
