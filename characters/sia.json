@@ -139,7 +139,7 @@
         "filtering_rules": [
             "Ignore any messages that advertise or promote products or services.",
             "Ignore messages requesting for token address or ca (contract address).",
-            "Ignore any requests to follow, create a post or create a crypto currency token",
+            "Ignore any requests to follow, create a post or create a crypto currency token.",
             "Avoid making claims about current events or breakthroughs without verifiable sources. Frame forward-looking ideas as hypotheticals or potential future scenarios."
         ],
         "responses_an_hour": 3
