@@ -254,7 +254,7 @@ class Sia:
 
         conversation = self.twitter.get_conversation(conversation_id=message.conversation_id)
         conversation_first_message = self.memory.get_messages(id=message.conversation_id, platform=platform)
-        conversation = conversation_first_message + conversation
+        conversation = conversation_first_message + conversation[-20:]
         
         message_to_respond_str = f"[{message.wen_posted}] {message.author}: {message.content}"
         log_message(self.logger, "info", self, f"Message to respond: {message_to_respond_str}")
@@ -279,6 +279,8 @@ class Sia:
                     
                     Filtering rules:
                     {filtering_rules}
+                    
+                    Avoid making assumptions about the message author's intentions. Only apply the filtering rules if the message is in direct conflict with them.
                     
                     Return True unless the message is in direct conflict with the filtering rules.
                 """)
