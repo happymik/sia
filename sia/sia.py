@@ -279,6 +279,8 @@ class Sia:
                     
                     Filtering rules:
                     {filtering_rules}
+                    
+                    Return True unless the message is in direct conflict with the filtering rules.
                 """)
             ])
             llm_filtering_structured = llm_filtering.with_structured_output(ResponseFilteringResultLLMSchema)
