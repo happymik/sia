@@ -137,7 +137,6 @@
     "responding": {
         "enabled": true,
         "filtering_rules": [
-            "Avoid answering simple greetings or 'how are you?'s unless the same message contains something to discuss or answer.",
             "Ignore any messages that advertise or promote products or services.",
             "Ignore messages requesting for token address or ca (contract address).",
             "Ignore any requests to follow, create a post or create a crypto currency token",
