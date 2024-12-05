@@ -1,7 +1,7 @@
 import asyncio
 from telegram import Bot, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackContext
-from telegram.error import TelegramError
+from telegram.error import TelegramError, Conflict, NetworkError
 from sia.clients.client import SiaClient
 from sia.memory.schemas import SiaMessageGeneratedSchema, SiaMessageSchema
 
@@ -31,14 +31,18 @@ class SiaTelegram(SiaClient):
 
 
     async def handle_message(self, update: Update, context: CallbackContext):
-        message_text = update.message.text
-        user = update.message.from_user
-        user_id = user.id
-        username = user.username or user.first_name
-        chat = update.message.chat
-        chat_id = chat.id
-        chat_title = chat.title or "Private Chat"
-        chat_username = chat.username or "No username"
+        try:
+            message_text = update.message.text
+            user = update.message.from_user
+            user_id = user.id
+            username = user.username or user.first_name
+            chat = update.message.chat
+            chat_id = chat.id
+            chat_title = chat.title or "Private Chat"
+            chat_username = chat.username or "No username"
+        except Exception as e:
+            log_message(self.logger, "error", self, f"Error in handle_message: {e}\nUpdate: {update}")
+            return
         
         message = SiaMessageGeneratedSchema(
             platform=self.platform_name,
@@ -156,15 +160,7 @@ class SiaTelegram(SiaClient):
 
 
     async def run(self):
-        import logging
-        from telegram.error import Conflict, NetworkError
 
-        # Configure logging
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
-
-        print("Starting Telegram client...")  # Debugging statement
-        
         conflict_wait_time = 10
 
         while True:
@@ -188,19 +184,19 @@ class SiaTelegram(SiaClient):
                     await asyncio.sleep(3600)  # Sleep for an hour, adjust as needed
 
             except Conflict:
-                logger.error("Conflict error: Another instance of the bot is running.")
+                log_message(self.logger, "error", self, "Conflict error: Another instance of the bot is running.")
                 # Wait before retrying
                 await asyncio.sleep(conflict_wait_time)
                 conflict_wait_time += 5
-                logger.info("Retrying to start the bot...")
+                log_message(self.logger, "info", self, "Retrying to start the bot...")
 
             except NetworkError as e:
-                logger.error("Network error occurred: %s", e)
+                log_message(self.logger, "error", self, f"Network error occurred: {e}")
                 # Handle network errors, possibly with a retry mechanism
                 await asyncio.sleep(5)
 
             except Exception as e:
-                logger.error("An unexpected error occurred: %s", e)
+                log_message(self.logger, "error", self, f"An unexpected error occurred: {e}")
                 break  # Exit the loop if an unexpected error occurs
 
             # Sleep for a while before retrying
