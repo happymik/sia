@@ -99,9 +99,11 @@ class SiaTwitterOfficial(SiaClient):
         log_message(self.logger, "info", self, f"my_tweet_ids: {my_tweet_ids}")
 
         messages = []
+        
+        time_to_sleep_before_next_batch = 61
 
         for i in range(0, len(my_tweet_ids), 10):
-            time.sleep(61)
+            time.sleep(time_to_sleep_before_next_batch)
             batch = my_tweet_ids[i:i+10]
             query = " OR ".join([f"conversation_id:{id}" for id in batch])
             log_message(self.logger, "info", self, f"query: {query}")
@@ -115,6 +117,7 @@ class SiaTwitterOfficial(SiaClient):
                 )
             except Exception as e:
                 log_message(self.logger, "error", self, f"Error getting replies: {e}")
+                time_to_sleep_before_next_batch += 30
                 continue
             
             if not new_replies_to_my_tweets.data:

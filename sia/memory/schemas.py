@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from uuid import uuid4
+
 class SiaMessageGeneratedSchema(BaseModel):
     conversation_id: Optional[str] = None
     content: str

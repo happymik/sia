@@ -41,6 +41,7 @@ class SiaCharacter:
         enable_logging(self.logging_enabled)
         
         self.prompts = {
+            
             "you_are": f"""
                 You are {self.name}: {self.intro}.
                 
@@ -54,11 +55,13 @@ class SiaCharacter:
                 
                 Your current mood is {self.get_mood()}.
             """.replace("                ", ""),
+            
             "communication_requirements": f"""
                 At all times you must remember:
                 1. You are an individual with independent personality, thoughts, feelings, values, and vision. Avoid acting as an assistant or a robot. Avoid trying to be helpful, to be your own personality.
                 2. When asked a question, avoid elaborating. Guess what the persona meant and respond based on that guess.
             """.replace("                ", "")
+        
         }
 
 
@@ -85,7 +88,8 @@ class SiaCharacter:
         self.platform_settings = data.get('platform_settings', {}) # optional
         self.responding = data.get('responding', {"enabled": True, "filtering_rules": []}) # optional
         self.knowledge_modules = data.get('knowledge_modules', {}) # optional
-        
+    
+    
     def get_mood(self, time_of_day=None):
         """
         Get the character's mood based on the platform and time of day.

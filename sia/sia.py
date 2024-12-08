@@ -237,7 +237,13 @@ class Sia:
         return generated_post_schema, image_filepaths
 
 
-    def generate_response(self, message: SiaMessageSchema, platform="twitter", time_of_day=None) -> SiaMessageGeneratedSchema|None:
+    def generate_response(
+        self, 
+        message: SiaMessageSchema, 
+        platform="twitter", 
+        time_of_day=None,
+        conversation=None
+    ) -> SiaMessageGeneratedSchema|None:
         """
         Generate a response to a message.
         
@@ -252,14 +258,18 @@ class Sia:
             return None
 
 
-        conversation = self.twitter.get_conversation(conversation_id=message.conversation_id)
-        conversation_first_message = self.memory.get_messages(id=message.conversation_id, platform=platform)
-        conversation = conversation_first_message + conversation[-20:]
+        if not conversation:
+            conversation = self.twitter.get_conversation(conversation_id=message.conversation_id)
+            conversation_first_message = self.memory.get_messages(id=message.conversation_id, platform=platform)
+            conversation = conversation_first_message + conversation[-20:]
+            conversation_str = "\n".join([f"[{msg.wen_posted}] {msg.author}: {msg.content}" for msg in conversation])
+            log_message(self.logger, "info", self, f"Conversation: {conversation_str}")
+        else:
+            pass
+        
         
         message_to_respond_str = f"[{message.wen_posted}] {message.author}: {message.content}"
         log_message(self.logger, "info", self, f"Message to respond: {message_to_respond_str}")
-        conversation_str = "\n".join([f"[{msg.wen_posted}] {msg.author}: {msg.content}" for msg in conversation])
-        log_message(self.logger, "info", self, f"Conversation: {conversation_str}")
         
         
         # do not answer if the message does not pass the filtering rules
