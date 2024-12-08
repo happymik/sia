@@ -3,6 +3,8 @@ import time
 import random
 import datetime
 
+from sia.memory.memory import SiaMemory
+
 from utils.logging_utils import setup_logging, log_message, enable_logging
 
 class SiaCharacter:
@@ -33,7 +35,7 @@ class SiaCharacter:
             self.platform_settings = platform_settings
             self.responding = responding
             self.knowledge_modules = knowledge_modules
-            
+                        
         self.sia = sia
 
         self.logger = setup_logging()

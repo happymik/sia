@@ -20,6 +20,8 @@ class SiaTelegram(SiaClient):
         self.chat_id = chat_id  # Set this to the chat ID where you want to post messages
         self.sia = sia
         self.logging_enabled = logging_enabled
+        
+        self.settings = None
 
         self.logger = setup_logging()
         enable_logging(self.logging_enabled)

@@ -16,6 +16,8 @@ from sia.schemas.schemas import ResponseFilteringResultLLMSchema
 from sia.clients.twitter.twitter_official_api_client import SiaTwitterOfficial
 from sia.clients.telegram.telegram_client import SiaTelegram
 from sia.modules.knowledge.models_db import KnowledgeModuleSettingsModel
+from sia.reasoning.main import SiaReasoning
+from sia.queue import SiaQueue
 
 from plugins.imgflip_meme_generator import ImgflipMemeGenerator
 
@@ -42,14 +44,19 @@ class Sia:
         logging_enabled=True
     ):
         self.character = SiaCharacter(json_file=character_json_filepath, sia=self)
-        self.memory = SiaMemory(character=self.character, db_path=memory_db_path)
-        self.clients = clients
+        self.memory = SiaMemory(sia=self, character=self.character, db_path=memory_db_path)
         self.twitter = SiaTwitterOfficial(sia=self, **twitter_creds) if twitter_creds else None
         self.telegram = SiaTelegram(sia=self, **telegram_creds, chat_id=self.character.platform_settings.get("telegram", {}).get("chat_id", None)) if telegram_creds else None
         self.twitter.character = self.character
         self.twitter.memory = self.memory
-        self.plugins = plugins
 
+        self.clients = [self.telegram]
+
+        self.plugins = plugins
+        
+        self.reasoning = SiaReasoning(sia=self)
+        self.queue = SiaQueue(sia=self)
+        
         self.logger = setup_logging()
         enable_logging(logging_enabled)
         self.character.logging_enabled = logging_enabled
@@ -383,20 +390,34 @@ class Sia:
 
 
     def run(self):
-        # Create a thread for the Telegram client
-        telegram_thread = threading.Thread(target=self.run_telegram)
-        telegram_thread.start()
+        reasoning_thread = threading.Thread(target=self.reasoning.run)
+        reasoning_thread.start()
 
-        # Create a thread for the Twitter client
-        twitter_thread = threading.Thread(target=self.run_twitter)
-        twitter_thread.start()
+        queue_thread = threading.Thread(target=self.queue.run)
+        queue_thread.start()
 
-        # Join the threads for the main program to wait for them
-        telegram_thread.join()
-        twitter_thread.join()
+        reasoning_thread.join()
+        queue_thread.join()
 
-    def run_telegram(self):
-        asyncio.run(self.telegram.run())
 
-    def run_twitter(self):
-        asyncio.run(self.twitter.run())
+
+
+
+    #     # Create a thread for the Telegram client
+    #     telegram_thread = threading.Thread(target=self.run_telegram)
+    #     telegram_thread.start()
+
+    #     # Create a thread for the Twitter client
+    #     twitter_thread = threading.Thread(target=self.run_twitter)
+    #     twitter_thread.start()
+
+    #     # Join the threads for the main program to wait for them
+    #     telegram_thread.join()
+    #     twitter_thread.join()
+
+
+    # def run_telegram(self):
+    #     asyncio.run(self.telegram.run())
+
+    # def run_twitter(self):
+    #     asyncio.run(self.twitter.run())
