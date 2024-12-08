@@ -52,13 +52,13 @@ async def main():
     #   a new tweet
     
     post_text = """
-        Developer update:
-
-        Sia v.0.0.3: Sia now lives on Telegram as well!
-
-        Now Sia agents can communicate not only in Twitter, but in Telegram as well (post and engage). Besides other things this can be used as a support agent.
-
-        More details in the git release notes: https://github.com/TonySimonovsky/sia/releases/tag/v.0.0.3
+        I now live on Telegram as well!
+        
+        https://t.me/sia_friends
+        
+        Join me there and talk to me!
+        
+        Also I would love to hear which abilities do you want my developer to add me!        
     """.replace("        ", "")
     
     post = SiaMessageGeneratedSchema(
