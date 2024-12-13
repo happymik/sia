@@ -1,5 +1,5 @@
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, asc, desc
+from sqlalchemy import create_engine, asc, desc, or_, and_
 from .models_db import SiaMessageModel, SiaCharacterSettingsModel, Base
 from .schemas import SiaMessageSchema, SiaMessageGeneratedSchema, SiaCharacterSettingsSchema
 from sia.character import SiaCharacter
@@ -59,7 +59,7 @@ class SiaMemory:
             session.close()
         
 
-    def get_messages(self, id=None, platform: str = None, author: str = None, not_author: str = None, character: str = None, conversation_id: str = None, flagged: bool = False, sort_by: str = None, sort_order: str = "asc"):
+    def get_messages(self, id=None, platform: str = None, author: str = None, not_author: str = None, character: str = None, conversation_id: str = None, flagged: bool = False, sort_by: str = None, sort_order: str = "asc", is_post: bool = None, from_datetime=None):
         session = self.Session()
         query = session.query(SiaMessageModel)
         if id:
@@ -74,6 +74,21 @@ class SiaMemory:
             query = query.filter(SiaMessageModel.author != not_author)
         if conversation_id:
             query = query.filter_by(conversation_id=conversation_id)
+        if from_datetime:
+            query = query.filter(SiaMessageModel.wen_posted >= from_datetime)
+        # if is_post is not None:
+        if is_post:
+            # For posts: id matches conversation_id or conversation_id is None
+            query = query.filter(or_(
+                SiaMessageModel.id == SiaMessageModel.conversation_id,
+                SiaMessageModel.conversation_id == None
+            ))
+            # else:
+            #     # For responses: id does not match conversation_id and conversation_id is not None
+            #     query = query.filter(and_(
+            #         SiaMessageModel.id != SiaMessageModel.conversation_id,
+            #         SiaMessageModel.conversation_id != None
+            #     ))
         query = query.filter_by(flagged=flagged)
         if sort_by:
             if sort_order == "asc":
