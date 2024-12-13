@@ -89,6 +89,84 @@ class SiaTwitterOfficial(SiaClient):
             return max(replies, key=lambda reply: reply.id).id
 
 
+    # def get_new_replies_to_my_tweets(self) -> list[SiaMessageSchema]:
+    #     since_id = self.get_last_retrieved_reply_id()
+
+    #     # sorted to process newer tweets first
+    #     my_tweet_ids = sorted(self.get_my_tweet_ids(), key=int, reverse=True)
+
+    #     log_message(self.logger, "info", self, f"since_id: {since_id}")
+    #     log_message(self.logger, "info", self, f"my_tweet_ids: {my_tweet_ids}")
+
+    #     messages = []
+        
+    #     time_to_sleep_before_next_batch = 61
+
+    #     for i in range(0, len(my_tweet_ids), 10):
+    #         time.sleep(time_to_sleep_before_next_batch)
+    #         batch = my_tweet_ids[i:i+10]
+    #         query = " OR ".join([f"conversation_id:{id}" for id in batch])
+    #         log_message(self.logger, "info", self, f"query: {query}")
+
+    #         try:
+    #             new_replies_to_my_tweets = self.client.search_recent_tweets(
+    #                 query=query,
+    #                 since_id=since_id,
+    #                 tweet_fields=["conversation_id","created_at","in_reply_to_user_id"],
+    #                 expansions=["author_id","referenced_tweets.id"]
+    #             )
+    #         except Exception as e:
+    #             log_message(self.logger, "error", self, f"Error getting replies: {e}")
+    #             time_to_sleep_before_next_batch += 30
+    #             continue
+            
+    #         if not new_replies_to_my_tweets.data:
+    #             continue
+            
+    #         for reply in new_replies_to_my_tweets.data:
+                
+    #             # exclude replies from the character itself
+    #             author = next((user.username for user in new_replies_to_my_tweets.includes['users'] if user.id == reply.author_id), None)
+    #             log_message(self.logger, "info", self, f"author of the received reply: {author}")
+    #             if author == self.character.twitter_username:
+    #                 continue
+                
+    #             try:
+    #                 from openai import OpenAI
+    #                 client = OpenAI()
+    #                 moderation_response = client.moderations.create(
+    #                     model="omni-moderation-latest",
+    #                     input=reply.text,
+    #                 )
+    #                 flagged = moderation_response.results[0].flagged
+    #                 if flagged:
+    #                     log_message(self.logger, "info", self, f"flagged reply: {reply.text}")
+    #             except Exception as e:
+    #                 log_message(self.logger, "error", self, f"Error moderating reply: {e}")
+    #                 flagged = False
+
+    #             try:
+    #                 message = self.memory.add_message(
+    #                     SiaMessageGeneratedSchema(
+    #                         conversation_id=str(reply.data['conversation_id']),
+    #                         content=reply.text,
+    #                         platform="twitter",
+    #                         author=next(user.username for user in new_replies_to_my_tweets.includes['users'] if user.id == reply.author_id),
+    #                         response_to=str(next((ref.id for ref in reply.referenced_tweets if ref.type == "replied_to"), None)) if reply.referenced_tweets else None,
+    #                         wen_posted=reply.created_at,
+    #                         flagged=int(flagged),
+    #                         metadata=moderation_response
+    #                     ),
+    #                     tweet_id=str(reply.id),
+    #                     original_data=reply.data
+    #                 )
+    #                 messages.append(message)
+    #             except Exception as e:
+    #                 log_message(self.logger, "error", self, f"Error adding message: {e}")
+
+    #     return messages
+
+
     def get_new_replies_to_my_tweets(self) -> list[SiaMessageSchema]:
         since_id = self.get_last_retrieved_reply_id()
 
@@ -96,73 +174,76 @@ class SiaTwitterOfficial(SiaClient):
         my_tweet_ids = sorted(self.get_my_tweet_ids(), key=int, reverse=True)
 
         log_message(self.logger, "info", self, f"since_id: {since_id}")
-        log_message(self.logger, "info", self, f"my_tweet_ids: {my_tweet_ids}")
+        # log_message(self.logger, "info", self, f"my_tweet_ids: {my_tweet_ids}")
 
         messages = []
         
-        time_to_sleep_before_next_batch = 61
+        # time_to_sleep_before_next_batch = 61
 
-        for i in range(0, len(my_tweet_ids), 10):
-            time.sleep(time_to_sleep_before_next_batch)
-            batch = my_tweet_ids[i:i+10]
-            query = " OR ".join([f"conversation_id:{id}" for id in batch])
-            log_message(self.logger, "info", self, f"query: {query}")
+        # for i in range(0, len(my_tweet_ids), 10):
+        #     time.sleep(time_to_sleep_before_next_batch)
+        #     batch = my_tweet_ids[i:i+10]
+        #     query = " OR ".join([f"conversation_id:{id}" for id in batch])
+        #     log_message(self.logger, "info", self, f"query: {query}")
+
+        try:
+            new_replies_to_my_tweets = self.client.search_recent_tweets(
+                query=f"to:{self.character.twitter_username}",
+                since_id=since_id,
+                tweet_fields=["conversation_id","created_at","in_reply_to_user_id"],
+                expansions=["author_id","referenced_tweets.id"]
+            )
+        except Exception as e:
+            log_message(self.logger, "error", self, f"Error getting replies: {e}")
+            return []
+            # time_to_sleep_before_next_batch += 30
+            # continue
+        
+        if not new_replies_to_my_tweets.data:
+            return []
+        
+        for reply in new_replies_to_my_tweets.data:
+            
+            log_message(self.logger, "info", self, f"processing new mention: {reply}")
+            
+            # exclude replies from the character itself
+            author = next((user.username for user in new_replies_to_my_tweets.includes['users'] if user.id == reply.author_id), None)
+            log_message(self.logger, "info", self, f"author of the received reply: {author}")
+            if author == self.character.twitter_username:
+                continue
+            
+            try:
+                from openai import OpenAI
+                client = OpenAI()
+                moderation_response = client.moderations.create(
+                    model="omni-moderation-latest",
+                    input=reply.text,
+                )
+                flagged = moderation_response.results[0].flagged
+                if flagged:
+                    log_message(self.logger, "info", self, f"flagged reply: {reply.text}")
+            except Exception as e:
+                log_message(self.logger, "error", self, f"Error moderating reply: {e}")
+                flagged = False
 
             try:
-                new_replies_to_my_tweets = self.client.search_recent_tweets(
-                    query=query,
-                    since_id=since_id,
-                    tweet_fields=["conversation_id","created_at","in_reply_to_user_id"],
-                    expansions=["author_id","referenced_tweets.id"]
+                message = self.memory.add_message(
+                    message_id=str(reply.id),
+                    message=SiaMessageGeneratedSchema(
+                        conversation_id=str(reply.data['conversation_id']),
+                        content=reply.text,
+                        platform="twitter",
+                        author=next(user.username for user in new_replies_to_my_tweets.includes['users'] if user.id == reply.author_id),
+                        response_to=str(next((ref.id for ref in reply.referenced_tweets if ref.type == "replied_to"), None)) if reply.referenced_tweets else None,
+                        wen_posted=reply.created_at,
+                        flagged=int(flagged),
+                        metadata=moderation_response
+                    ),
+                    original_data=reply.data
                 )
+                messages.append(message)
             except Exception as e:
-                log_message(self.logger, "error", self, f"Error getting replies: {e}")
-                time_to_sleep_before_next_batch += 30
-                continue
-            
-            if not new_replies_to_my_tweets.data:
-                continue
-            
-            for reply in new_replies_to_my_tweets.data:
-                
-                # exclude replies from the character itself
-                author = next((user.username for user in new_replies_to_my_tweets.includes['users'] if user.id == reply.author_id), None)
-                log_message(self.logger, "info", self, f"author of the received reply: {author}")
-                if author == self.character.twitter_username:
-                    continue
-                
-                try:
-                    from openai import OpenAI
-                    client = OpenAI()
-                    moderation_response = client.moderations.create(
-                        model="omni-moderation-latest",
-                        input=reply.text,
-                    )
-                    flagged = moderation_response.results[0].flagged
-                    if flagged:
-                        log_message(self.logger, "info", self, f"flagged reply: {reply.text}")
-                except Exception as e:
-                    log_message(self.logger, "error", self, f"Error moderating reply: {e}")
-                    flagged = False
-
-                try:
-                    message = self.memory.add_message(
-                        SiaMessageGeneratedSchema(
-                            conversation_id=str(reply.data['conversation_id']),
-                            content=reply.text,
-                            platform="twitter",
-                            author=next(user.username for user in new_replies_to_my_tweets.includes['users'] if user.id == reply.author_id),
-                            response_to=str(next((ref.id for ref in reply.referenced_tweets if ref.type == "replied_to"), None)) if reply.referenced_tweets else None,
-                            wen_posted=reply.created_at,
-                            flagged=int(flagged),
-                            metadata=moderation_response
-                        ),
-                        tweet_id=str(reply.id),
-                        original_data=reply.data
-                    )
-                    messages.append(message)
-                except Exception as e:
-                    log_message(self.logger, "error", self, f"Error adding message: {e}")
+                log_message(self.logger, "error", self, f"Error adding message: {e}")
 
         return messages
 
@@ -221,6 +302,8 @@ class SiaTwitterOfficial(SiaClient):
             # replying
             #   to new replies
             
+            replies_sent = 0
+            
             if self.character.responding.get("enabled", True):
                 print("Checking for new replies...")
                 replies = self.get_new_replies_to_my_tweets()
@@ -240,7 +323,7 @@ class SiaTwitterOfficial(SiaClient):
                         if r.flagged:
                             print(f"Skipping flagged reply: {r}")
                             continue
-                        generated_response = self.generate_response(r)
+                        generated_response = self.sia.generate_response(r)
                         if not generated_response:
                             print(f"No response generated for reply: {r}")
                             continue
