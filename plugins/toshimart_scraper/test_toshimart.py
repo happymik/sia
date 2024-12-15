@@ -42,8 +42,7 @@ async def test_toshimart_scraper(url: str, headless: bool = False):
         print("\n=== 🔄 Recent Transactions ===")
         for tx in data.get('transactions', []):
             tags_str = f" [{', '.join(tx['tags'])}]" if tx.get('tags') else ""
-            print(f"• {tx['time']} - {tx['address']}{tags_str} {tx['action']} {tx['eth']} ({tx['usd']})")
-            
+            print(f"• {tx['time']} - {tx['address']}{tags_str} {tx['action']} {tx['eth']} ({tx['usd']})")n            
         await scraper.cleanup()
         print("\n✅ Test completed successfully!")
         
