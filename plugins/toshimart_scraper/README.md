@@ -1,67 +1,79 @@
 # Toshimart Scraper Plugin
 
-This plugin is designed to scrape data from Toshimart token pages to monitor market activity and holder behavior.
+This plugin scrapes data from Toshimart token pages to monitor market activity, holder behavior, and chat messages.
+
+## Features
+
+### Market Data
+- Market Cap
+- Uniswap Progress
+- Progress to Listing
+
+### Holder Tracking
+- Address/Name
+- Percentage Holdings
+- Special Labels (dev, whale)
+
+### Transaction History
+- Buy/Sell Actions
+- Amount in ETH & USD
+- Timestamps
+- Special Labels
+
+### Chat Messages
+- Transaction announcements
+- Regular chat messages
+- Message timestamps
+- User tags/labels
 
 ## Data Format
-
-The scraper returns data in the following structure:
 
 ```python
 {
     # Market Overview
-    "marketCap": "20.62k",        # Current market cap in USD
-    "progress": "42% - 27.38k",   # Progress to Uniswap listing
+    "marketCap": "$20.62k",
+    "progress": "42% - 27.39k to Uniswap",
     
     # Holders List
     "holders": [
         {
-            "address": "Detroit Tokens🪙",  # Holder name/address
-            "percentage": "31.16",          # Holding percentage
-            "labels": ["dev", "whale"]      # Special labels if any
+            "address": "Detroit Tokens",
+            "percentage": "31.16",
+            "labels": ["dev", "whale"]
+        }
+    ],
+    
+    # Chat Messages
+    "chat": [
+        {
+            "address": "Detroit Tokens",
+            "content": "bought 0.0121 ETH of $SDETROIT",
+            "time": "6 days ago",
+            "tags": ["dev", "whale"],
+            "type": "transaction"
         },
-        # ... more holders
+        {
+            "address": "0x309d...fa9d",
+            "content": "If you buy my coin, I will make all of your wildest dreams come true. Vote For Pedro!",
+            "time": "6 days ago",
+            "tags": [],
+            "type": "chat"
+        }
     ],
     
     # Transaction History
     "transactions": [
         {
-            "time": "31 minutes ago",      # Transaction timestamp
-            "address": "Wall Street Bets",  # Buyer/Seller name
-            "action": "sell",              # Transaction type
-            "eth": "< 0.001",             # Amount in ETH
-            "usd": "$3",                  # Amount in USD
-            "tokens": "123456",           # Amount in tokens
-            "tags": ["whale", "dev"]      # Special tags if any
-        },
-        # ... more transactions
+            "time": "6 days ago",
+            "address": "Detroit Tokens",
+            "action": "buy",
+            "eth": "0.0121",
+            "usd": "$47",
+            "tags": ["dev", "whale"]
+        }
     ]
 }
 ```
-
-## Features
-
-### Currently Working
-- Market Data Collection
-  - Market Cap (e.g., "$20.62k")
-  - Uniswap Progress (e.g., "42% - 27.38k to Uniswap")
-
-- Holder Tracking
-  - Address/Name (full addresses or ENS names)
-  - Percentage Holdings (exact percentage)
-  - Special Labels (dev, whale) - Currently being enhanced
-
-- Transaction History
-  - Timestamps (relative time, e.g., "31 minutes ago")
-  - Buy/Sell Actions
-  - Amount in ETH and USD
-  - Special Tags (dev, whale) - Currently being enhanced
-
-### Coming Soon
-- Chat Message Collection (In Development)
-  - User Messages
-  - Buy/Sell Announcements
-  - User Tags/Labels
-  - Timestamps
 
 ## Usage
 
@@ -84,6 +96,10 @@ async def monitor_token():
         labels = ', '.join(holder['labels']) if holder['labels'] else ''
         print(f"{holder['address']}: {holder['percentage']}% {labels}")
     
+    # Access chat messages
+    for msg in data['chat']:
+        print(f"{msg['time']} - {msg['address']}: {msg['content']}")
+    
     # Access transactions
     for tx in data['transactions']:
         print(f"{tx['time']} - {tx['address']} {tx['action']} {tx['eth']} ({tx['usd']})")
@@ -91,20 +107,19 @@ async def monitor_token():
 
 ## Testing
 
-Use the provided test script to verify functionality:
-
+Use the provided test script:
 ```bash
 python test_toshimart.py
 ```
 
-## Known Issues and Improvements
-1. Special labels (dev, whale) detection is being enhanced
-2. Chat functionality is under development
-3. Some transaction amounts might show as "< 0.001" for very small transactions
+## Features Coming Soon
+- Historical data tracking
+- Market trend analysis
+- Advanced chat analysis
+- Sentiment analysis for chat messages
+- Real-time event streaming
 
-## Debugging
-
-The scraper includes built-in debugging features:
-- Detailed console logging
-- Error screenshots
-- Step-by-step data validation
+## Known Issues
+- Some emoji characters might be stripped from messages
+- Very short messages might be filtered out
+- Time parsing might vary based on browser locale
